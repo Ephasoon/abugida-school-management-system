@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ASMS — Exam Schedule</title>
+<link rel="stylesheet" href="assets/css/main.css">
+<style>
+  /* ── Calendar Grid ── */
+  .calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
+  }
+  .cal-day-header {
+    text-align: center;
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--text3);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 8px 0;
+  }
+  .cal-cell {
+    min-height: 80px;
+    border-radius: 8px;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    padding: 6px;
+    transition: border-color 0.15s;
+  }
+  .cal-cell:hover { border-color: var(--border2); }
+  .cal-cell.today { border-color: var(--gold); }
+  .cal-cell.other-month { opacity: 0.3; }
+  .cal-date {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text3);
+    margin-bottom: 4px;
+  }
+  .cal-cell.today .cal-date { color: var(--gold); }
+  .cal-exam {
+    background: rgba(99,179,237,0.15);
+    border: 1px solid rgba(99,179,237,0.25);
+    border-radius: 4px;
+    padding: 3px 6px;
+    font-size: 9px;
+    font-weight: 600;
+    color: var(--blue);
+    margin-bottom: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .cal-exam:hover { background: rgba(99,179,237,0.25); }
+  .cal-exam.midterm { background: rgba(245,166,35,0.15); border-color: rgba(245,166,35,0.25); color: var(--gold); }
+  .cal-exam.final   { background: rgba(252,129,129,0.15); border-color: rgba(252,129,129,0.25); color: var(--red); }
+  .cal-exam.quiz    { background: rgba(104,211,145,0.15); border-color: rgba(104,211,145,0.25); color: var(--green); }
+
+  /* ── Month nav ── */
+  .month-nav {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 20px;
+  }
+  .month-title {
+    font-size: 18px;
+    font-weight: 800;
+    flex: 1;
+    text-align: center;
+  }
+  .month-btn {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 14px;
+    color: var(--text2);
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.15s;
+    font-family: 'Sora';
+  }
+  .month-btn:hover { border-color: var(--gold); color: var(--gold); }
+
+  /* ── Upcoming list ── */
+  .upcoming-item {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    margin-bottom: 8px;
+    transition: border-color 0.15s;
+  }
+  .upcoming-item:hover { border-color: var(--border2); }
+  .exam-date-box {
+    width: 52px;
+    height: 52px;
+    border-radius: 10px;
+    background: var(--card);
+    border: 1px solid var(--border2);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .exam-date-day { font-size: 18px; font-weight: 800; color: var(--gold); line-height: 1; }
+  .exam-date-month { font-size: 9px; color: var(--text3); font-weight: 600; text-transform: uppercase; }
+  .exam-details { flex: 1; min-width: 0; }
+  .exam-name { font-size: 14px; font-weight: 700; margin-bottom: 3px; }
+  .exam-meta { font-size: 11px; color: var(--text3); }
+  .days-badge {
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+  .days-soon   { background: rgba(252,129,129,0.15); color: var(--red); }
+  .days-near   { background: rgba(245,166,35,0.15);  color: var(--gold); }
+  .days-future { background: rgba(104,211,145,0.15); color: var(--green); }
+</style>
+</head>
+<body>
+
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-icon">🎓</div>
+    <div class="logo-text">
+      <div class="name">ASMS</div>
+      <span class="sub">አቡጊዳ ትምህርት ቤት</span>
+    </div>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-section">Overview</div>
+    <a href="dashboard.html" class="nav-item"><span class="nav-icon">📊</span> Dashboard</a>
+    <div class="nav-section">Academic</div>
+    <a href="students.html" class="nav-item"><span class="nav-icon">👨‍🎓</span> Students</a>
+    <a href="teachers.html" class="nav-item"><span class="nav-icon">👩‍🏫</span> Teachers</a>
+    <a href="attendance.html" class="nav-item"><span class="nav-icon">📅</span> Attendance</a>
+    <a href="grades.html" class="nav-item"><span class="nav-icon">📝</span> Grades & Exams</a>
+    <a href="timetable.html" class="nav-item"><span class="nav-icon">🗓️</span> Timetable</a>
+    <a href="exam-schedule.html" class="nav-item active"><span class="nav-icon">📋</span> Exam Schedule</a>
+    <a href="academic-years.html" class="nav-item"><span class="nav-icon">🏫</span> Academic Years</a>
+    <div class="nav-section">Operations</div>
+    <a href="finance.html" class="nav-item"><span class="nav-icon">💰</span> Finance</a>
+  </nav>
+  <div class="sidebar-footer">
+    <div class="user-card" onclick="logout()">
+      <div class="user-avatar" id="userInitials">AD</div>
+      <div>
+        <div class="user-name" id="userName">Administrator</div>
+        <div class="user-role" id="userRole">Admin</div>
+      </div>
+      <span style="margin-left:auto;color:var(--text3);font-size:11px">↪</span>
+    </div>
+  </div>
+</aside>
+
+<main class="main">
+  <div class="topbar">
+    <div class="page-title">
+      Exam Schedule
+      <span class="sub">የፈተና መርሃ ግብር</span>
+    </div>
+    <div style="display:flex;gap:10px">
+      <select class="form-control" id="viewToggle" style="width:140px" onchange="switchView()">
+        <option value="calendar">📅 Calendar View</option>
+        <option value="list">📋 List View</option>
+        <option value="upcoming">⏰ Upcoming</option>
+      </select>
+      <button class="btn btn-primary" onclick="openScheduleModal()">+ Schedule Exam</button>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- ── CALENDAR VIEW ── -->
+    <div id="view-calendar">
+      <div class="month-nav">
+        <button class="month-btn" onclick="changeMonth(-1)">← Prev</button>
+        <div class="month-title" id="monthTitle">April 2026</div>
+        <button class="month-btn" onclick="changeMonth(1)">Next →</button>
+      </div>
+
+      <!-- Legend -->
+      <div style="display:flex;gap:16px;margin-bottom:16px;flex-wrap:wrap">
+        <span style="font-size:11px;display:flex;align-items:center;gap:5px">
+          <span style="width:12px;height:12px;background:rgba(99,179,237,0.2);border-radius:2px;display:inline-block"></span>
+          Quiz / Assignment
+        </span>
+        <span style="font-size:11px;display:flex;align-items:center;gap:5px">
+          <span style="width:12px;height:12px;background:rgba(245,166,35,0.2);border-radius:2px;display:inline-block"></span>
+          Midterm
+        </span>
+        <span style="font-size:11px;display:flex;align-items:center;gap:5px">
+          <span style="width:12px;height:12px;background:rgba(252,129,129,0.2);border-radius:2px;display:inline-block"></span>
+          Final Exam
+        </span>
+      </div>
+
+      <div class="panel">
+        <div class="panel-body" style="padding:16px">
+          <div id="calendarContainer">
+            <div class="loading-state"><div class="spinner"></div> Loading calendar...</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── LIST VIEW ── -->
+    <div id="view-list" style="display:none">
+      <div style="display:flex;gap:12px;margin-bottom:16px;align-items:center">
+        <select class="form-control" style="width:150px" id="listTerm" onchange="loadListView()">
+          <option value="">All Terms</option>
+          <option value="term1">Term 1</option>
+          <option value="term2">Term 2</option>
+          <option value="term3">Term 3</option>
+        </select>
+        <select class="form-control" style="width:180px" id="listClass" onchange="loadListView()">
+          <option value="">All Classes</option>
+        </select>
+      </div>
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title">📋 All Scheduled Exams</div>
+          <span id="listCount" style="font-size:12px;color:var(--text3)"></span>
+        </div>
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Exam Name</th>
+                <th>Class</th>
+                <th>Subject</th>
+                <th>Type</th>
+                <th>Term</th>
+                <th>Date</th>
+                <th>Max Score</th>
+                <th>Grades</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="listBody">
+              <tr><td colspan="9">
+                <div class="loading-state"><div class="spinner"></div></div>
+              </td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── UPCOMING VIEW ── -->
+    <div id="view-upcoming" style="display:none">
+      <div style="display:flex;gap:12px;margin-bottom:16px;align-items:center">
+        <select class="form-control" style="width:160px" id="upcomingDays" onchange="loadUpcoming()">
+          <option value="7">Next 7 days</option>
+          <option value="14">Next 14 days</option>
+          <option value="30" selected>Next 30 days</option>
+          <option value="60">Next 60 days</option>
+        </select>
+      </div>
+      <div id="upcomingList">
+        <div class="loading-state"><div class="spinner"></div></div>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<!-- ═══ SCHEDULE EXAM MODAL ═══ -->
+<div class="modal-overlay" id="scheduleModal">
+  <div class="modal" style="max-width:540px">
+    <div class="modal-title">
+      📋 Schedule New Exam
+      <button class="modal-close" onclick="closeScheduleModal()">✕</button>
+    </div>
+    <div class="form-grid">
+      <div class="form-group form-full">
+        <label class="form-label">Exam Name *</label>
+        <input class="form-control" type="text" id="ex_name"
+          placeholder="e.g. Mathematics Final Exam — Grade 10">
+      </div>
+      <div class="form-group form-full">
+        <label class="form-label">Class *</label>
+        <select class="form-control" id="ex_class">
+          <option value="">Select class...</option>
+        </select>
+      </div>
+      <div class="form-group form-full">
+        <label class="form-label">Subject *</label>
+        <select class="form-control" id="ex_subject">
+          <option value="">Select subject...</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Exam Type *</label>
+        <select class="form-control" id="ex_type">
+          <option value="quiz">Quiz</option>
+          <option value="midterm">Midterm</option>
+          <option value="final">Final Exam</option>
+          <option value="assignment">Assignment</option>
+          <option value="project">Project</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Term *</label>
+        <select class="form-control" id="ex_term">
+          <option value="term1">Term 1</option>
+          <option value="term2">Term 2</option>
+          <option value="term3">Term 3</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Exam Date *</label>
+        <input class="form-control" type="date" id="ex_date">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Max Score</label>
+        <input class="form-control" type="number" id="ex_max" value="100">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Start Time</label>
+        <input class="form-control" type="time" id="ex_start" value="08:00">
+      </div>
+      <div class="form-group">
+        <label class="form-label">End Time</label>
+        <input class="form-control" type="time" id="ex_end" value="10:00">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Room / Venue</label>
+        <input class="form-control" type="text" id="ex_room" placeholder="e.g. Room 12, Main Hall">
+      </div>
+      <div class="form-group form-full">
+        <label class="form-label">Instructions / Notes</label>
+        <input class="form-control" type="text" id="ex_instructions"
+          placeholder="e.g. Bring calculator. No books allowed.">
+      </div>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:20px;justify-content:flex-end">
+      <button class="btn btn-ghost" onclick="closeScheduleModal()">Cancel</button>
+      <button class="btn btn-primary" id="saveExamBtn" onclick="saveExam()">Schedule Exam</button>
+    </div>
+  </div>
+</div>
+
+<script src="assets/js/api.js"></script>
+<script>
+  requireAuth();
+  const user = getUser();
+  if (user) {
+    document.getElementById('userName').textContent     = user.email.split('@')[0];
+    document.getElementById('userRole').textContent     = user.role;
+    document.getElementById('userInitials').textContent = user.email[0].toUpperCase();
+  }
+
+  const MONTHS = ['January','February','March','April','May','June',
+                  'July','August','September','October','November','December'];
+  const DAYS   = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+
+  let currentMonth = new Date().getMonth() + 1;
+  let currentYear  = new Date().getFullYear();
+  let allClasses   = [];
+  let allSubjects  = [];
+
+  // ── View switching ─────────────────────────────────────
+  function switchView() {
+    const view = document.getElementById('viewToggle').value;
+    document.getElementById('view-calendar').style.display = view === 'calendar' ? 'block' : 'none';
+    document.getElementById('view-list').style.display     = view === 'list'     ? 'block' : 'none';
+    document.getElementById('view-upcoming').style.display = view === 'upcoming' ? 'block' : 'none';
+
+    if (view === 'calendar') loadCalendar();
+    if (view === 'list')     loadListView();
+    if (view === 'upcoming') loadUpcoming();
+  }
+
+  // ── CALENDAR ──────────────────────────────────────────
+  function changeMonth(dir) {
+    currentMonth += dir;
+    if (currentMonth > 12) { currentMonth = 1;  currentYear++; }
+    if (currentMonth < 1)  { currentMonth = 12; currentYear--; }
+    loadCalendar();
+  }
+
+  async function loadCalendar() {
+    document.getElementById('monthTitle').textContent =
+      `${MONTHS[currentMonth-1]} ${currentYear}`;
+    document.getElementById('calendarContainer').innerHTML =
+      `<div class="loading-state"><div class="spinner"></div></div>`;
+
+    const res = await api.get(`/exam-schedule/calendar?month=${currentMonth}&year=${currentYear}`);
+
+    const byDate = res?.success ? res.data.by_date : {};
+
+    // Build calendar
+    const firstDay = new Date(currentYear, currentMonth-1, 1).getDay();
+    const daysInMonth = new Date(currentYear, currentMonth, 0).getDate();
+    const today = new Date().toISOString().split('T')[0];
+
+    let html = `<div class="calendar-grid">`;
+
+    // Day headers
+    DAYS.forEach(d => { html += `<div class="cal-day-header">${d}</div>`; });
+
+    // Empty cells before first day
+    for (let i = 0; i < firstDay; i++) {
+      html += `<div class="cal-cell other-month"></div>`;
+    }
+
+    // Day cells
+    for (let d = 1; d <= daysInMonth; d++) {
+      const dateStr  = `${currentYear}-${String(currentMonth).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+      const isToday  = dateStr === today;
+      const exams    = byDate[dateStr] || [];
+
+      html += `<div class="cal-cell ${isToday?'today':''}">
+        <div class="cal-date">${d}</div>
+        ${exams.map(e => `
+          <div class="cal-exam ${e.exam_type}" title="${e.class_name} — ${e.subject_name}">
+            ${e.subject_code} · ${e.class_name?.split(' ').slice(-2).join(' ')}
+          </div>
+        `).join('')}
+      </div>`;
+    }
+
+    html += `</div>`;
+    document.getElementById('calendarContainer').innerHTML = html;
+  }
+
+  // ── LIST VIEW ─────────────────────────────────────────
+  async function loadListView() {
+    const term    = document.getElementById('listTerm').value;
+    const classId = document.getElementById('listClass').value;
+
+    let url = '/exam-schedule?';
+    if (term)    url += `term=${term}&`;
+    if (classId) url += `class_id=${classId}&`;
+
+    document.getElementById('listBody').innerHTML =
+      `<tr><td colspan="9"><div class="loading-state"><div class="spinner"></div></div></td></tr>`;
+
+    const res = await api.get(url);
+    if (!res?.success) return;
+
+    const exams = res.data;
+    document.getElementById('listCount').textContent = `${exams.length} exam(s)`;
+
+    document.getElementById('listBody').innerHTML = exams.length
+      ? exams.map(e => `
+          <tr>
+            <td class="primary">${e.name}</td>
+            <td style="font-size:12px">${e.class_name||'—'}</td>
+            <td style="font-size:12px">${e.subject_name||'—'}</td>
+            <td>
+              <span class="badge ${typeColor(e.exam_type)}" style="text-transform:capitalize">
+                ${e.exam_type}
+              </span>
+            </td>
+            <td style="font-size:12px;color:var(--text3)">${e.term}</td>
+            <td style="font-family:'JetBrains Mono';font-size:12px">
+              ${e.exam_date ? formatDate(e.exam_date) : '<span style="color:var(--text3)">Not set</span>'}
+            </td>
+            <td style="font-size:12px;text-align:center">${e.max_score}</td>
+            <td style="text-align:center">
+              <span class="badge ${parseInt(e.grades_entered)>0?'badge-green':'badge-gray'}">
+                ${e.grades_entered}
+              </span>
+            </td>
+            <td>
+              <button class="btn btn-danger btn-sm" onclick="cancelExam('${e.id}','${e.name}')">
+                Cancel
+              </button>
+            </td>
+          </tr>
+        `).join('')
+      : `<tr><td colspan="9">
+           <div class="empty-state"><div class="empty-icon">📋</div>
+           <p>No exams scheduled. Click "+ Schedule Exam" to add one.</p></div>
+         </td></tr>`;
+  }
+
+  function typeColor(t) {
+    const map = {midterm:'badge-gold',final:'badge-red',quiz:'badge-green',
+                 assignment:'badge-blue',project:'badge-blue'};
+    return map[t] || 'badge-gray';
+  }
+
+  // ── UPCOMING VIEW ─────────────────────────────────────
+  async function loadUpcoming() {
+    const days = document.getElementById('upcomingDays').value;
+    document.getElementById('upcomingList').innerHTML =
+      `<div class="loading-state"><div class="spinner"></div></div>`;
+
+    const res = await api.get(`/exam-schedule/upcoming?days=${days}`);
+    if (!res?.success) return;
+
+    const exams = res.data;
+
+    if (exams.length === 0) {
+      document.getElementById('upcomingList').innerHTML =
+        `<div class="empty-state"><div class="empty-icon">🎉</div>
+         <p>No exams in the next ${days} days!</p></div>`;
+      return;
+    }
+
+    document.getElementById('upcomingList').innerHTML = exams.map(e => {
+      const d    = new Date(e.exam_date);
+      const day  = d.getDate();
+      const mon  = MONTHS[d.getMonth()].substring(0,3).toUpperCase();
+      const until= parseInt(e.days_until);
+      const urgClass = until <= 3 ? 'days-soon' : until <= 7 ? 'days-near' : 'days-future';
+      const urgLabel = until === 0 ? 'TODAY' : until === 1 ? 'TOMORROW' : `${until} days`;
+
+      return `
+        <div class="upcoming-item">
+          <div class="exam-date-box">
+            <div class="exam-date-day">${day}</div>
+            <div class="exam-date-month">${mon}</div>
+          </div>
+          <div class="exam-details">
+            <div class="exam-name">${e.name}</div>
+            <div class="exam-meta">
+              ${e.class_name||'—'} &nbsp;·&nbsp; ${e.subject_name||'—'} &nbsp;·&nbsp;
+              <span style="text-transform:capitalize">${e.exam_type}</span> &nbsp;·&nbsp;
+              ${e.term} &nbsp;·&nbsp; Max: ${e.max_score}
+            </div>
+          </div>
+          <span class="days-badge ${urgClass}">${urgLabel}</span>
+        </div>
+      `;
+    }).join('');
+  }
+
+  // ── Cancel Exam ────────────────────────────────────────
+  async function cancelExam(id, name) {
+    if (!confirm(`Cancel exam "${name}"?\n\nThis can only be done if no grades have been entered.`)) return;
+    const res = await api.delete(`/exam-schedule/${id}`);
+    if (res?.success) {
+      showToast(`Exam "${name}" cancelled.`, 'success');
+      loadListView();
+    } else {
+      showToast(res?.message || 'Cannot cancel this exam.', 'error');
+    }
+  }
+
+  // ── Schedule Modal ─────────────────────────────────────
+  async function openScheduleModal() {
+    document.getElementById('scheduleModal').classList.add('open');
+
+    // Load classes and subjects if not loaded
+    if (allClasses.length === 0) {
+      const res = await api.get('/timetable/classes');
+      if (res?.success) {
+        allClasses = res.data;
+        const sel = document.getElementById('ex_class');
+        allClasses.forEach(c => {
+          sel.innerHTML += `<option value="${c.id}">${c.name}</option>`;
+        });
+        // Also populate list filter
+        const listSel = document.getElementById('listClass');
+        listSel.innerHTML = '<option value="">All Classes</option>';
+        allClasses.forEach(c => {
+          listSel.innerHTML += `<option value="${c.id}">${c.name}</option>`;
+        });
+      }
+    }
+    if (allSubjects.length === 0) {
+      const res = await api.get('/timetable/subjects');
+      if (res?.success) {
+        allSubjects = res.data;
+        const sel = document.getElementById('ex_subject');
+        allSubjects.forEach(s => {
+          sel.innerHTML += `<option value="${s.id}">${s.name} (${s.code})</option>`;
+        });
+      }
+    }
+
+    // Set today as default date
+    document.getElementById('ex_date').value = new Date().toISOString().split('T')[0];
+  }
+
+  function closeScheduleModal() {
+    document.getElementById('scheduleModal').classList.remove('open');
+  }
+
+  async function saveExam() {
+    const name         = document.getElementById('ex_name').value.trim();
+    const class_id     = document.getElementById('ex_class').value;
+    const subject_id   = document.getElementById('ex_subject').value;
+    const exam_type    = document.getElementById('ex_type').value;
+    const term         = document.getElementById('ex_term').value;
+    const exam_date    = document.getElementById('ex_date').value;
+    const max_score    = document.getElementById('ex_max').value;
+    const start_time   = document.getElementById('ex_start').value;
+    const end_time     = document.getElementById('ex_end').value;
+    const room         = document.getElementById('ex_room').value.trim();
+    const instructions = document.getElementById('ex_instructions').value.trim();
+
+    if (!name || !class_id || !subject_id || !exam_date) {
+      showToast('Name, class, subject, and date are required.', 'error');
+      return;
+    }
+
+    const btn = document.getElementById('saveExamBtn');
+    btn.textContent = 'Scheduling...'; btn.disabled = true;
+
+    const res = await api.post('/exam-schedule', {
+      name, class_id, subject_id, exam_type, term, exam_date,
+      max_score: parseFloat(max_score),
+      start_time: start_time || null,
+      end_time:   end_time   || null,
+      room:       room       || null,
+      instructions: instructions || null,
+    });
+
+    btn.textContent = 'Schedule Exam'; btn.disabled = false;
+
+    if (res?.success) {
+      showToast(`Exam "${name}" scheduled for ${formatDate(exam_date)}!`, 'success');
+      closeScheduleModal();
+      switchView(); // Refresh current view
+    } else {
+      showToast(res?.message || 'Failed to schedule exam.', 'error');
+    }
+  }
+
+  function formatDate(d) {
+    if (!d) return '—';
+    return new Date(d).toLocaleDateString('en-ET',{year:'numeric',month:'short',day:'numeric'});
+  }
+
+  // ── Init ───────────────────────────────────────────────
+  loadCalendar();
+  loadUpcoming(); // Pre-load for badge counts
+</script>
+</body>
+</html>

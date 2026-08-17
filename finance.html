@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ASMS — Finance</title>
+<link rel="stylesheet" href="assets/css/main.css">
+</head>
+<body>
+
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-icon">🎓</div>
+    <div class="logo-text">
+      <div class="name">ASMS</div>
+      <span class="sub">አቡጊዳ ትምህርት ቤት</span>
+    </div>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-section">Overview</div>
+    <a href="dashboard.html" class="nav-item"><span class="nav-icon">📊</span> Dashboard</a>
+    <div class="nav-section">Academic</div>
+    <a href="students.html" class="nav-item"><span class="nav-icon">👨‍🎓</span> Students</a>
+    <a href="teachers.html" class="nav-item"><span class="nav-icon">👩‍🏫</span> Teachers</a>
+    <a href="attendance.html" class="nav-item"><span class="nav-icon">📅</span> Attendance</a>
+    <a href="grades.html" class="nav-item"><span class="nav-icon">📝</span> Grades & Exams</a>
+    <a href="timetable.html" class="nav-item"><span class="nav-icon">🗓️</span> Timetable</a>
+    <a href="exam-schedule.html" class="nav-item"><span class="nav-icon">📋</span> Exam Schedule</a>
+    <a href="academic-years.html" class="nav-item"><span class="nav-icon">🏫</span> Academic Years</a>
+    <div class="nav-section">Operations</div>
+    <a href="finance.html" class="nav-item active"><span class="nav-icon">💰</span> Finance</a>
+    <a href="documents.html" class="nav-item"><span class="nav-icon">📁</span> Documents</a>
+  </nav>
+  <div class="sidebar-footer">
+    <div class="user-card" onclick="logout()">
+      <div class="user-avatar" id="userInitials">AD</div>
+      <div>
+        <div class="user-name" id="userName">Administrator</div>
+        <div class="user-role" id="userRole">Admin</div>
+      </div>
+      <span style="margin-left:auto;color:var(--text3);font-size:11px">↪</span>
+    </div>
+  </div>
+</aside>
+
+<main class="main">
+  <div class="topbar">
+    <div class="page-title">
+      Finance
+      <span class="sub">ፋይናንስ</span>
+    </div>
+    <button class="btn btn-primary" onclick="openPaymentModal()">+ Record Payment</button>
+  </div>
+
+  <div class="content">
+
+    <!-- Summary Cards -->
+    <div class="stats-row" id="financeStats">
+      <div class="stat-card green">
+        <div class="stat-icon">💵</div>
+        <div class="stat-val" id="totalCollected">—</div>
+        <div class="stat-label">Total Collected (ETB)</div>
+      </div>
+      <div class="stat-card gold">
+        <div class="stat-icon">📋</div>
+        <div class="stat-val" id="totalExpected">—</div>
+        <div class="stat-label">Total Expected (ETB)</div>
+      </div>
+      <div class="stat-card purple">
+        <div class="stat-icon">⏳</div>
+        <div class="stat-val" id="totalOutstanding">—</div>
+        <div class="stat-label">Outstanding (ETB)</div>
+      </div>
+      <div class="stat-card teal">
+        <div class="stat-icon">📈</div>
+        <div class="stat-val" id="collectionRate">—</div>
+        <div class="stat-label">Collection Rate</div>
+      </div>
+    </div>
+
+    <div class="two-col">
+
+      <!-- Payment Methods Breakdown -->
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title">💳 By Payment Method</div>
+        </div>
+        <div class="panel-body" id="methodBreakdown">
+          <div class="loading-state"><div class="spinner"></div></div>
+        </div>
+      </div>
+
+      <!-- Unpaid Students -->
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title">⚠️ Unpaid Students</div>
+          <span id="unpaidCount" style="font-size:12px;color:var(--red)"></span>
+        </div>
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr><th>Student</th><th>Class</th><th>Balance</th></tr>
+            </thead>
+            <tbody id="unpaidList">
+              <tr><td colspan="3"><div class="loading-state"><div class="spinner"></div></div></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- All Payments -->
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-title">📋 Payment History</div>
+      </div>
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Student</th>
+              <th>Category</th>
+              <th>Term</th>
+              <th>Amount Due</th>
+              <th>Amount Paid</th>
+              <th>Method</th>
+              <th>Date</th>
+              <th>Receipt</th>
+            </tr>
+          </thead>
+          <tbody id="paymentsBody">
+            <tr><td colspan="8"><div class="loading-state"><div class="spinner"></div></div></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<!-- ═══ RECORD PAYMENT MODAL ═══ -->
+<div class="modal-overlay" id="paymentModal">
+  <div class="modal">
+    <div class="modal-title">
+      💳 Record Payment
+      <button class="modal-close" onclick="closePaymentModal()">✕</button>
+    </div>
+
+    <div class="form-grid">
+      <div class="form-group form-full">
+        <label class="form-label">Student *</label>
+        <select class="form-control" id="p_studentId">
+          <option value="">Select student...</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Term *</label>
+        <select class="form-control" id="p_term">
+          <option value="term1">Term 1</option>
+          <option value="term2">Term 2</option>
+          <option value="term3">Term 3</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Category *</label>
+        <select class="form-control" id="p_category">
+          <option value="tuition">Tuition</option>
+          <option value="registration">Registration</option>
+          <option value="exam">Exam Fee</option>
+          <option value="other">Other</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Amount Due (ETB) *</label>
+        <input class="form-control" type="number" id="p_amountDue" placeholder="3500">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Amount Paid (ETB) *</label>
+        <input class="form-control" type="number" id="p_amountPaid" placeholder="3500">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Payment Method</label>
+        <select class="form-control" id="p_method">
+          <option value="cash">Cash</option>
+          <option value="bank_transfer">Bank Transfer</option>
+          <option value="cbe_birr">CBE Birr</option>
+          <option value="telebirr">Telebirr</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Payment Date</label>
+        <input class="form-control" type="date" id="p_date">
+      </div>
+      <div class="form-group form-full">
+        <label class="form-label">Notes</label>
+        <input class="form-control" type="text" id="p_notes" placeholder="Optional notes">
+      </div>
+    </div>
+
+    <div style="display:flex;gap:10px;margin-top:20px;justify-content:flex-end">
+      <button class="btn btn-ghost" onclick="closePaymentModal()">Cancel</button>
+      <button class="btn btn-primary" id="savePaymentBtn" onclick="savePayment()">
+        Record Payment
+      </button>
+    </div>
+  </div>
+</div>
+
+<script src="assets/js/api.js"></script>
+<script>
+  requireAuth();
+  const user = getUser();
+  if (user) {
+    document.getElementById('userName').textContent     = user.email.split('@')[0];
+    document.getElementById('userRole').textContent     = user.role;
+    document.getElementById('userInitials').textContent = user.email[0].toUpperCase();
+  }
+
+  // ── Load Finance Data ─────────────────────────────────────
+  async function loadFinance() {
+    const [summaryRes, paymentsRes, unpaidRes] = await Promise.all([
+      api.get('/finance/summary'),
+      api.get('/finance/payments?limit=20'),
+      api.get('/finance/unpaid'),
+    ]);
+
+    // Summary cards
+    if (summaryRes?.success) {
+      const s = summaryRes.data.summary || summaryRes.data;
+      document.getElementById('totalCollected').textContent =
+        s.total_collected ? Math.round(s.total_collected).toLocaleString() : '0';
+      document.getElementById('totalExpected').textContent =
+        s.total_expected ? Math.round(s.total_expected).toLocaleString() : '0';
+      document.getElementById('totalOutstanding').textContent =
+        s.total_outstanding ? Math.round(s.total_outstanding).toLocaleString() : '0';
+      document.getElementById('collectionRate').textContent =
+        `${s.collection_rate || 0}%`;
+
+      // Methods breakdown
+      const methods = summaryRes.data.by_method || [];
+      document.getElementById('methodBreakdown').innerHTML = methods.length
+        ? methods.map(m => `
+            <div style="display:flex;align-items:center;justify-content:space-between;
+              padding:10px 0;border-bottom:1px solid var(--border)">
+              <div>
+                <div style="font-size:13px;font-weight:600;text-transform:capitalize">
+                  ${(m.payment_method||'').replace('_',' ')}
+                </div>
+                <div style="font-size:11px;color:var(--text3)">${m.count} transaction(s)</div>
+              </div>
+              <div style="font-size:13px;font-weight:700;color:var(--green)">
+                ${formatETB(m.total)}
+              </div>
+            </div>`).join('')
+        : `<p style="color:var(--text3);font-size:13px;text-align:center;padding:20px">
+             No payments yet
+           </p>`;
+    }
+
+    // Payments table
+    if (paymentsRes?.success) {
+      const payments = paymentsRes.data.payments || paymentsRes.data || [];
+      document.getElementById('paymentsBody').innerHTML = payments.length
+        ? payments.map(p => `
+            <tr>
+              <td class="primary">${p.student_name || '—'}</td>
+              <td style="text-transform:capitalize">${p.category || '—'}</td>
+              <td>${p.term || '—'}</td>
+              <td style="font-family:'JetBrains Mono';font-size:12px">
+                ${formatETB(p.amount_due)}
+              </td>
+              <td style="font-family:'JetBrains Mono';font-size:12px;color:var(--green)">
+                ${formatETB(p.amount_paid)}
+              </td>
+              <td style="text-transform:capitalize">
+                ${(p.payment_method||'').replace('_',' ')}
+              </td>
+              <td style="font-size:12px;color:var(--text3)">${formatDate(p.payment_date)}</td>
+              <td style="font-family:'JetBrains Mono';font-size:11px;color:var(--text3)">
+                ${p.receipt_number || '—'}
+              </td>
+            </tr>`).join('')
+        : `<tr><td colspan="8">
+             <div class="empty-state">
+               <div class="empty-icon">💳</div>
+               <p>No payments recorded yet</p>
+             </div>
+           </td></tr>`;
+    }
+
+    // Unpaid students
+    if (unpaidRes?.success) {
+      const students = unpaidRes.data || [];
+      document.getElementById('unpaidCount').textContent =
+        students.length ? `${students.length} student(s)` : '';
+      document.getElementById('unpaidList').innerHTML = students.length
+        ? students.map(s => `
+            <tr>
+              <td class="primary">${s.name || s.full_name || '—'}</td>
+              <td style="font-size:12px">${s.class_name || '—'}</td>
+              <td style="font-family:'JetBrains Mono';font-size:12px;color:var(--red)">
+                ${formatETB(s.balance)}
+              </td>
+            </tr>`).join('')
+        : `<tr><td colspan="3">
+             <div class="empty-state">
+               <div class="empty-icon">✅</div>
+               <p>All students paid!</p>
+             </div>
+           </td></tr>`;
+    }
+  }
+
+  // ── Open Payment Modal ────────────────────────────────────
+  async function openPaymentModal() {
+    document.getElementById('paymentModal').classList.add('open');
+    document.getElementById('p_date').value = new Date().toISOString().split('T')[0];
+
+    // Load students into dropdown
+    const sel = document.getElementById('p_studentId');
+    if (sel.options.length <= 1) {
+      const res = await api.get('/students?limit=200&status=active');
+      if (res?.success) {
+        res.data.students.forEach(s => {
+          sel.innerHTML += `<option value="${s.id}">
+            ${s.first_name} ${s.last_name} (${s.student_number})
+          </option>`;
+        });
+      }
+    }
+  }
+
+  // ── Close Payment Modal ───────────────────────────────────
+  function closePaymentModal() {
+    document.getElementById('paymentModal').classList.remove('open');
+    document.getElementById('p_studentId').value  = '';
+    document.getElementById('p_amountDue').value  = '';
+    document.getElementById('p_amountPaid').value = '';
+    document.getElementById('p_notes').value      = '';
+  }
+
+  // ── Save Payment ──────────────────────────────────────────
+  async function savePayment() {
+    const student_id     = document.getElementById('p_studentId').value;
+    const term           = document.getElementById('p_term').value;
+    const category       = document.getElementById('p_category').value;
+    const amount_due     = document.getElementById('p_amountDue').value;
+    const amount_paid    = document.getElementById('p_amountPaid').value;
+    const payment_method = document.getElementById('p_method').value;
+    const payment_date   = document.getElementById('p_date').value;
+    const notes          = document.getElementById('p_notes').value.trim();
+
+    if (!student_id || !amount_due || !amount_paid) {
+      showToast('Please select a student and enter amounts.', 'error');
+      return;
+    }
+
+    const btn = document.getElementById('savePaymentBtn');
+    btn.textContent = 'Saving...';
+    btn.disabled    = true;
+
+    const res = await api.post('/finance/payments', {
+      student_id, term, category,
+      amount_due:  parseFloat(amount_due),
+      amount_paid: parseFloat(amount_paid),
+      payment_method, payment_date,
+      notes: notes || null,
+    });
+
+    btn.textContent = 'Record Payment';
+    btn.disabled    = false;
+
+    if (res?.success) {
+      showToast(`✅ Payment saved! Receipt: ${res.data.receipt_number}`, 'success');
+      closePaymentModal();
+      loadFinance();
+    } else {
+      showToast(res?.message || 'Failed to record payment.', 'error');
+    }
+  }
+
+  // ── Init ──────────────────────────────────────────────────
+  loadFinance();
+</script>
+</body>
+</html>

@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ASMS — Attendance</title>
+<link rel="stylesheet" href="assets/css/main.css">
+</head>
+<body>
+
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-icon">🎓</div>
+    <div class="logo-text">
+      <div class="name">ASMS</div>
+      <span class="sub">አቡጊዳ ትምህርት ቤት</span>
+    </div>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-section">Overview</div>
+    <a href="dashboard.html" class="nav-item"><span class="nav-icon">📊</span> Dashboard</a>
+    <div class="nav-section">Academic</div>
+    <a href="students.html" class="nav-item"><span class="nav-icon">👨‍🎓</span> Students</a>
+    <a href="teachers.html" class="nav-item"><span class="nav-icon">👩‍🏫</span> Teachers</a>
+    <a href="attendance.html" class="nav-item active"><span class="nav-icon">📅</span> Attendance</a>
+    <a href="grades.html" class="nav-item"><span class="nav-icon">📝</span> Grades & Exams</a>
+    <div class="nav-section">Operations</div>
+    <a href="finance.html" class="nav-item"><span class="nav-icon">💰</span> Finance</a>
+  </nav>
+  <div class="sidebar-footer">
+    <div class="user-card" onclick="logout()">
+      <div class="user-avatar" id="userInitials">AD</div>
+      <div>
+        <div class="user-name" id="userName">Administrator</div>
+        <div class="user-role" id="userRole">Admin</div>
+      </div>
+      <span style="margin-left:auto;color:var(--text3);font-size:11px">↪</span>
+    </div>
+  </div>
+</aside>
+
+<main class="main">
+  <div class="topbar">
+    <div class="page-title">
+      Attendance
+      <span class="sub">መገኘት</span>
+    </div>
+    <div style="display:flex;gap:10px;align-items:center">
+      <input type="date" class="form-control" id="selectedDate" style="width:160px">
+      <button class="btn btn-primary" onclick="saveAttendance()">💾 Save Attendance</button>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- Stats -->
+    <div class="stats-row" style="grid-template-columns:repeat(4,1fr)">
+      <div class="stat-card green">
+        <div class="stat-icon">✅</div>
+        <div class="stat-val" id="presentCount">0</div>
+        <div class="stat-label">Present</div>
+      </div>
+      <div class="stat-card" style="border-color:rgba(252,129,129,0.2)">
+        <div class="stat-icon">❌</div>
+        <div class="stat-val" style="color:var(--red)" id="absentCount">0</div>
+        <div class="stat-label">Absent</div>
+      </div>
+      <div class="stat-card gold">
+        <div class="stat-icon">⏰</div>
+        <div class="stat-val" id="lateCount">0</div>
+        <div class="stat-label">Late</div>
+      </div>
+      <div class="stat-card teal">
+        <div class="stat-icon">📊</div>
+        <div class="stat-val" id="rateDisplay">—</div>
+        <div class="stat-label">Attendance Rate</div>
+      </div>
+    </div>
+
+    <div class="two-col">
+
+      <!-- Mark Attendance -->
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title">📅 Mark Attendance</div>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-success btn-sm" onclick="markAll('present')">✓ All Present</button>
+            <button class="btn btn-danger btn-sm" onclick="markAll('absent')">✗ All Absent</button>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Student</th>
+                <th>ID</th>
+                <th style="text-align:center">Present</th>
+                <th style="text-align:center">Absent</th>
+                <th style="text-align:center">Late</th>
+              </tr>
+            </thead>
+            <tbody id="attendanceBody">
+              <tr><td colspan="5">
+                <div class="loading-state"><div class="spinner"></div> Loading students...</div>
+              </td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Attendance History -->
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title">📊 Student Attendance History</div>
+        </div>
+        <div class="panel-body">
+          <div class="form-group" style="margin-bottom:14px">
+            <label class="form-label">Search Student ID</label>
+            <div style="display:flex;gap:8px">
+              <input class="form-control" type="text" id="historyStudentId"
+                placeholder="Paste student UUID...">
+              <button class="btn btn-ghost" onclick="loadHistory()">View</button>
+            </div>
+          </div>
+          <div id="historyResult">
+            <div class="empty-state">
+              <div class="empty-icon">📅</div>
+              <p>Enter a student ID to view their attendance history</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+</main>
+
+<script src="assets/js/api.js"></script>
+<script>
+  requireAuth();
+  const user = getUser();
+  if (user) {
+    document.getElementById('userName').textContent     = user.email.split('@')[0];
+    document.getElementById('userRole').textContent     = user.role;
+    document.getElementById('userInitials').textContent = user.email[0].toUpperCase();
+  }
+
+  // Set today's date
+  const today = new Date().toISOString().split('T')[0];
+  document.getElementById('selectedDate').value = today;
+
+  // Students loaded for attendance
+  let students = [];
+
+  // ── Load students ──────────────────────────────────────
+  async function loadStudents() {
+    const res = await api.get('/students?limit=100&status=active');
+    if (!res?.success) return;
+
+    students = res.data.students;
+
+    if (students.length === 0) {
+      document.getElementById('attendanceBody').innerHTML =
+        `<tr><td colspan="5"><div class="empty-state"><div class="empty-icon">👤</div><p>No active students found. Register students first.</p></div></td></tr>`;
+      return;
+    }
+
+    renderAttendanceTable();
+  }
+
+  function renderAttendanceTable() {
+    document.getElementById('attendanceBody').innerHTML = students.map(s => `
+      <tr id="row-${s.id}">
+        <td class="primary">${s.first_name} ${s.last_name}</td>
+        <td style="font-size:11px;color:var(--text3);font-family:'JetBrains Mono'">${s.student_number}</td>
+        <td style="text-align:center">
+          <input type="radio" name="att-${s.id}" value="present"
+            onchange="updateCount()" checked
+            style="accent-color:var(--green);width:16px;height:16px;cursor:pointer">
+        </td>
+        <td style="text-align:center">
+          <input type="radio" name="att-${s.id}" value="absent"
+            onchange="updateCount()"
+            style="accent-color:var(--red);width:16px;height:16px;cursor:pointer">
+        </td>
+        <td style="text-align:center">
+          <input type="radio" name="att-${s.id}" value="late"
+            onchange="updateCount()"
+            style="accent-color:var(--gold);width:16px;height:16px;cursor:pointer">
+        </td>
+      </tr>
+    `).join('');
+
+    updateCount();
+  }
+
+  function updateCount() {
+    let present = 0, absent = 0, late = 0;
+    students.forEach(s => {
+      const val = document.querySelector(`input[name="att-${s.id}"]:checked`)?.value;
+      if (val === 'present') present++;
+      else if (val === 'absent') absent++;
+      else if (val === 'late') late++;
+    });
+
+    document.getElementById('presentCount').textContent = present;
+    document.getElementById('absentCount').textContent  = absent;
+    document.getElementById('lateCount').textContent    = late;
+
+    const total = present + absent + late;
+    const rate  = total > 0 ? Math.round((present / total) * 100) : 0;
+    document.getElementById('rateDisplay').textContent = `${rate}%`;
+  }
+
+  function markAll(status) {
+    students.forEach(s => {
+      const radio = document.querySelector(`input[name="att-${s.id}"][value="${status}"]`);
+      if (radio) radio.checked = true;
+    });
+    updateCount();
+  }
+
+  async function saveAttendance() {
+    if (students.length === 0) {
+      showToast('No students to mark attendance for.', 'error');
+      return;
+    }
+
+    const date    = document.getElementById('selectedDate').value;
+    const records = students.map(s => ({
+      student_id: s.id,
+      status: document.querySelector(`input[name="att-${s.id}"]:checked`)?.value || 'present',
+    }));
+
+    // Use first student's class_id
+    const class_id = students[0]?.class_id || null;
+
+    const res = await api.post('/attendance', { class_id, date, records });
+
+    if (res?.success) {
+      showToast(`Attendance saved for ${res.data.total_marked} student(s) on ${date}!`, 'success');
+    } else {
+      showToast(res?.message || 'Failed to save attendance.', 'error');
+    }
+  }
+
+  // ── Load student history ───────────────────────────────
+  async function loadHistory() {
+    const studentId = document.getElementById('historyStudentId').value.trim();
+    if (!studentId) {
+      showToast('Please enter a student ID.', 'error');
+      return;
+    }
+
+    document.getElementById('historyResult').innerHTML =
+      `<div class="loading-state"><div class="spinner"></div></div>`;
+
+    const res = await api.get(`/attendance/student/${studentId}`);
+
+    if (!res?.success) {
+      document.getElementById('historyResult').innerHTML =
+        `<div class="empty-state"><p>Student not found or no attendance records.</p></div>`;
+      return;
+    }
+
+    const { stats, records } = res.data;
+
+    document.getElementById('historyResult').innerHTML = `
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">
+        <div style="background:var(--bg3);border-radius:8px;padding:12px;text-align:center">
+          <div style="font-size:20px;font-weight:800;color:var(--green)">${stats.attendance_rate || 0}%</div>
+          <div style="font-size:11px;color:var(--text3)">Rate</div>
+        </div>
+        <div style="background:var(--bg3);border-radius:8px;padding:12px;text-align:center">
+          <div style="font-size:20px;font-weight:800;color:var(--text)">${stats.total_days}</div>
+          <div style="font-size:11px;color:var(--text3)">Total Days</div>
+        </div>
+        <div style="background:var(--bg3);border-radius:8px;padding:8px;text-align:center">
+          <div style="font-size:16px;font-weight:700;color:var(--green)">${stats.present}</div>
+          <div style="font-size:10px;color:var(--text3)">Present</div>
+        </div>
+        <div style="background:var(--bg3);border-radius:8px;padding:8px;text-align:center">
+          <div style="font-size:16px;font-weight:700;color:var(--red)">${stats.absent}</div>
+          <div style="font-size:10px;color:var(--text3)">Absent</div>
+        </div>
+      </div>
+      <div style="max-height:250px;overflow-y:auto">
+        ${records.map(r => `
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)">
+            <span style="font-size:12px;color:var(--text2)">${formatDate(r.date)}</span>
+            ${statusBadge(r.status)}
+          </div>
+        `).join('') || '<p style="color:var(--text3);font-size:12px;text-align:center;padding:16px">No records found</p>'}
+      </div>
+    `;
+  }
+
+  loadStudents();
+</script>
+</body>
+</html>

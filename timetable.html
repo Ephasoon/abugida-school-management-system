@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ASMS — Timetable</title>
+<link rel="stylesheet" href="assets/css/main.css">
+<style>
+  /* ── Timetable Grid ── */
+  .tt-grid {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+  }
+
+  .tt-grid th {
+    padding: 10px 8px;
+    text-align: center;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    color: var(--text3);
+    border-bottom: 2px solid var(--border);
+    white-space: nowrap;
+  }
+
+  .tt-grid th.day-header {
+    color: var(--gold);
+    background: rgba(245,166,35,0.05);
+    border-radius: 6px 6px 0 0;
+  }
+
+  .tt-grid td {
+    padding: 4px;
+    vertical-align: top;
+    border: 1px solid rgba(99,179,237,0.06);
+    min-width: 130px;
+    height: 70px;
+  }
+
+  .tt-grid td.period-label {
+    text-align: center;
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--text3);
+    background: var(--bg3);
+    padding: 8px 6px;
+    white-space: nowrap;
+    min-width: 70px;
+    border-right: 2px solid var(--border);
+  }
+
+  .tt-slot {
+    background: linear-gradient(135deg, rgba(99,179,237,0.12), rgba(99,179,237,0.06));
+    border: 1px solid rgba(99,179,237,0.2);
+    border-radius: 8px;
+    padding: 8px 10px;
+    height: 100%;
+    cursor: pointer;
+    transition: all 0.15s;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .tt-slot:hover {
+    border-color: var(--blue);
+    transform: scale(1.02);
+    z-index: 2;
+  }
+
+  .tt-slot::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 3px;
+    border-radius: 3px 0 0 3px;
+  }
+
+  .tt-slot.math::before    { background: var(--gold); }
+  .tt-slot.english::before { background: var(--blue); }
+  .tt-slot.science::before { background: var(--green); }
+  .tt-slot.amharic::before { background: var(--purple); }
+  .tt-slot.history::before { background: var(--teal); }
+  .tt-slot.default::before { background: var(--text3); }
+
+  .tt-subject {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 3px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .tt-teacher {
+    font-size: 10px;
+    color: var(--text3);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .tt-room {
+    font-size: 9px;
+    color: var(--gold);
+    margin-top: 2px;
+  }
+
+  .tt-delete {
+    position: absolute;
+    top: 4px; right: 4px;
+    background: rgba(252,129,129,0.15);
+    border: none;
+    color: var(--red);
+    border-radius: 4px;
+    width: 18px; height: 18px;
+    font-size: 10px;
+    cursor: pointer;
+    display: none;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .tt-slot:hover .tt-delete { display: flex; }
+
+  .tt-empty {
+    height: 100%;
+    border: 1px dashed rgba(255,255,255,0.06);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: transparent;
+    font-size: 18px;
+    transition: all 0.15s;
+  }
+
+  .tt-empty:hover {
+    border-color: var(--gold);
+    color: var(--gold);
+    background: rgba(245,166,35,0.05);
+  }
+
+  /* Color codes by subject */
+  .color-gold   { color: var(--gold); }
+  .color-blue   { color: var(--blue); }
+  .color-green  { color: var(--green); }
+  .color-purple { color: var(--purple); }
+  .color-teal   { color: var(--teal); }
+  .color-red    { color: var(--red); }
+</style>
+</head>
+<body>
+
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-icon">🎓</div>
+    <div class="logo-text">
+      <div class="name">ASMS</div>
+      <span class="sub">አቡጊዳ ትምህርት ቤት</span>
+    </div>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-section">Overview</div>
+    <a href="dashboard.html" class="nav-item"><span class="nav-icon">📊</span> Dashboard</a>
+    <div class="nav-section">Academic</div>
+    <a href="students.html" class="nav-item"><span class="nav-icon">👨‍🎓</span> Students</a>
+    <a href="teachers.html" class="nav-item"><span class="nav-icon">👩‍🏫</span> Teachers</a>
+    <a href="attendance.html" class="nav-item"><span class="nav-icon">📅</span> Attendance</a>
+    <a href="grades.html" class="nav-item"><span class="nav-icon">📝</span> Grades & Exams</a>
+    <a href="timetable.html" class="nav-item active"><span class="nav-icon">🗓️</span> Timetable</a>
+    <div class="nav-section">Operations</div>
+    <a href="finance.html" class="nav-item"><span class="nav-icon">💰</span> Finance</a>
+  </nav>
+  <div class="sidebar-footer">
+    <div class="user-card" onclick="logout()">
+      <div class="user-avatar" id="userInitials">AD</div>
+      <div>
+        <div class="user-name" id="userName">Administrator</div>
+        <div class="user-role" id="userRole">Admin</div>
+      </div>
+      <span style="margin-left:auto;color:var(--text3);font-size:11px">↪</span>
+    </div>
+  </div>
+</aside>
+
+<main class="main">
+  <div class="topbar">
+    <div class="page-title">
+      Timetable
+      <span class="sub">የሰዓት ሠንጠረዥ</span>
+    </div>
+    <div style="display:flex;gap:10px;align-items:center">
+      <select class="form-control" id="classSelect" style="width:200px" onchange="loadTimetable()">
+        <option value="">Select Class...</option>
+      </select>
+      <select class="form-control" id="viewMode" style="width:140px" onchange="switchView()">
+        <option value="class">Class View</option>
+        <option value="teacher">Teacher View</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- Legend -->
+    <div style="display:flex;gap:16px;margin-bottom:20px;flex-wrap:wrap">
+      <div style="font-size:11px;color:var(--text3);display:flex;align-items:center;gap:5px">
+        <span style="width:12px;height:12px;background:var(--gold);border-radius:2px;display:inline-block"></span> Mathematics
+      </div>
+      <div style="font-size:11px;color:var(--text3);display:flex;align-items:center;gap:5px">
+        <span style="width:12px;height:12px;background:var(--blue);border-radius:2px;display:inline-block"></span> English
+      </div>
+      <div style="font-size:11px;color:var(--text3);display:flex;align-items:center;gap:5px">
+        <span style="width:12px;height:12px;background:var(--green);border-radius:2px;display:inline-block"></span> Science
+      </div>
+      <div style="font-size:11px;color:var(--text3);display:flex;align-items:center;gap:5px">
+        <span style="width:12px;height:12px;background:var(--purple);border-radius:2px;display:inline-block"></span> Amharic
+      </div>
+      <div style="font-size:11px;color:var(--text3);display:flex;align-items:center;gap:5px">
+        <span style="width:12px;height:12px;background:var(--teal);border-radius:2px;display:inline-block"></span> Other
+      </div>
+      <div style="margin-left:auto;font-size:11px;color:var(--text3)">
+        💡 Click <strong style="color:var(--gold)">+</strong> on any empty cell to add a class
+      </div>
+    </div>
+
+    <!-- Timetable Panel -->
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-title" id="timetableTitle">🗓️ Weekly Timetable</div>
+        <div style="font-size:12px;color:var(--text3)" id="slotCount"></div>
+      </div>
+      <div style="overflow-x:auto;padding:16px">
+        <div id="timetableContainer">
+          <div class="empty-state" style="padding:60px">
+            <div class="empty-icon">🗓️</div>
+            <p>Select a class above to view its timetable</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<!-- ═══ ADD SLOT MODAL ═══ -->
+<div class="modal-overlay" id="slotModal">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-title">
+      ➕ Add Timetable Slot
+      <button class="modal-close" onclick="closeSlotModal()">✕</button>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-bottom:16px;background:var(--bg3);border-radius:8px;padding:12px">
+      <div style="font-size:11px;color:var(--text3)">Day</div>
+      <div style="font-size:13px;font-weight:700;color:var(--gold)" id="slotDay">—</div>
+      <div style="font-size:11px;color:var(--text3)">Period</div>
+      <div style="font-size:13px;font-weight:700;color:var(--blue)" id="slotPeriod">—</div>
+    </div>
+
+    <div class="form-grid">
+      <div class="form-group form-full">
+        <label class="form-label">Subject *</label>
+        <select class="form-control" id="sl_subject">
+          <option value="">Select subject...</option>
+        </select>
+      </div>
+      <div class="form-group form-full">
+        <label class="form-label">Teacher</label>
+        <select class="form-control" id="sl_teacher">
+          <option value="">Select teacher (optional)...</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Start Time *</label>
+        <input class="form-control" type="time" id="sl_startTime">
+      </div>
+      <div class="form-group">
+        <label class="form-label">End Time *</label>
+        <input class="form-control" type="time" id="sl_endTime">
+      </div>
+      <div class="form-group form-full">
+        <label class="form-label">Room / Location</label>
+        <input class="form-control" type="text" id="sl_room" placeholder="e.g. Room 12, Lab A">
+      </div>
+    </div>
+
+    <div style="display:flex;gap:10px;margin-top:20px;justify-content:flex-end">
+      <button class="btn btn-ghost" onclick="closeSlotModal()">Cancel</button>
+      <button class="btn btn-primary" id="saveSlotBtn" onclick="saveSlot()">Add Slot</button>
+    </div>
+  </div>
+</div>
+
+<script src="assets/js/api.js"></script>
+<script>
+  requireAuth();
+  const user = getUser();
+  if (user) {
+    document.getElementById('userName').textContent     = user.email.split('@')[0];
+    document.getElementById('userRole').textContent     = user.role;
+    document.getElementById('userInitials').textContent = user.email[0].toUpperCase();
+  }
+
+  const DAYS    = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  const PERIODS = [
+    { num: 1, label: 'P1', time: '8:00' },
+    { num: 2, label: 'P2', time: '9:00' },
+    { num: 3, label: 'P3', time: '10:00' },
+    { num: 4, label: 'P4', time: '11:00' },
+    { num: 5, label: 'P5', time: '13:00' },
+    { num: 6, label: 'P6', time: '14:00' },
+    { num: 7, label: 'P7', time: '15:00' },
+    { num: 8, label: 'P8', time: '16:00' },
+  ];
+
+  let currentClassId = null;
+  let currentDay     = null;
+  let currentPeriod  = null;
+  let allSubjects    = [];
+  let allTeachers    = [];
+
+  // ── Load Classes into Dropdown ──────────────────────────
+  async function loadClasses() {
+    const res = await api.get('/timetable/classes');
+    if (!res?.success) return;
+
+    const select = document.getElementById('classSelect');
+    res.data.forEach(c => {
+      const opt = document.createElement('option');
+      opt.value       = c.id;
+      opt.textContent = c.name;
+      select.appendChild(opt);
+    });
+  }
+
+  // ── Load Timetable for Selected Class ──────────────────
+  async function loadTimetable() {
+    const classId = document.getElementById('classSelect').value;
+    if (!classId) {
+      document.getElementById('timetableContainer').innerHTML =
+        `<div class="empty-state" style="padding:60px"><div class="empty-icon">🗓️</div><p>Select a class above</p></div>`;
+      return;
+    }
+
+    currentClassId = classId;
+    document.getElementById('timetableContainer').innerHTML =
+      `<div class="loading-state" style="padding:40px"><div class="spinner"></div> Loading timetable...</div>`;
+
+    const res = await api.get(`/timetable/class/${classId}`);
+    if (!res?.success) {
+      document.getElementById('timetableContainer').innerHTML =
+        `<div class="empty-state"><p>Failed to load timetable</p></div>`;
+      return;
+    }
+
+    const { class: cls, by_day, total_slots } = res.data;
+
+    document.getElementById('timetableTitle').textContent = `🗓️ ${cls.name} — Weekly Timetable`;
+    document.getElementById('slotCount').textContent      = `${total_slots} slot(s)`;
+
+    renderTimetableGrid(by_day);
+  }
+
+  // ── Render the Visual Grid ─────────────────────────────
+  function renderTimetableGrid(byDay) {
+    let html = `
+      <table class="tt-grid">
+        <thead>
+          <tr>
+            <th style="width:70px">Period</th>
+            ${DAYS.map(d => `<th class="day-header">${d}</th>`).join('')}
+          </tr>
+        </thead>
+        <tbody>
+    `;
+
+    PERIODS.forEach(p => {
+      html += `<tr>`;
+      html += `
+        <td class="period-label">
+          <div style="font-size:11px;font-weight:800;color:var(--text)">${p.label}</div>
+          <div style="font-size:9px;color:var(--text3);margin-top:2px">${p.time}</div>
+        </td>
+      `;
+
+      DAYS.forEach(day => {
+        const slots   = byDay[day] || [];
+        const slot    = slots.find(s => s.period === p.num);
+        const colorClass = getSubjectColor(slot?.subject_name);
+
+        if (slot) {
+          html += `
+            <td>
+              <div class="tt-slot ${colorClass}" onclick="editSlot('${slot.id}')">
+                <button class="tt-delete" onclick="event.stopPropagation();removeSlot('${slot.id}')">✕</button>
+                <div class="tt-subject">${slot.subject_name || '—'}</div>
+                <div class="tt-teacher">${slot.teacher_name || 'No teacher'}</div>
+                ${slot.room ? `<div class="tt-room">📍 ${slot.room}</div>` : ''}
+                <div style="font-size:9px;color:var(--text3);margin-top:3px">${formatTime(slot.start_time)} – ${formatTime(slot.end_time)}</div>
+              </div>
+            </td>
+          `;
+        } else {
+          html += `
+            <td>
+              <div class="tt-empty" onclick="openSlotModal('${day}', ${p.num}, '${p.time}')">+</div>
+            </td>
+          `;
+        }
+      });
+
+      html += `</tr>`;
+    });
+
+    html += `</tbody></table>`;
+    document.getElementById('timetableContainer').innerHTML = html;
+  }
+
+  // ── Subject Color Coding ───────────────────────────────
+  function getSubjectColor(name) {
+    if (!name) return 'default';
+    const n = name.toLowerCase();
+    if (n.includes('math'))    return 'math';
+    if (n.includes('english')) return 'english';
+    if (n.includes('science') || n.includes('bio') || n.includes('chem') || n.includes('phys')) return 'science';
+    if (n.includes('amhar'))   return 'amharic';
+    if (n.includes('hist') || n.includes('civ') || n.includes('geo')) return 'history';
+    return 'default';
+  }
+
+  function formatTime(t) {
+    if (!t) return '';
+    return t.substring(0, 5);
+  }
+
+  // ── Open Add Slot Modal ────────────────────────────────
+  async function openSlotModal(day, period, defaultTime) {
+    currentDay    = day;
+    currentPeriod = period;
+
+    document.getElementById('slotDay').textContent    = day;
+    document.getElementById('slotPeriod').textContent = `Period ${period}`;
+    document.getElementById('sl_room').value          = '';
+
+    // Set default times
+    const [h, m]  = defaultTime.split(':');
+    const startH  = parseInt(h);
+    document.getElementById('sl_startTime').value = `${String(startH).padStart(2,'0')}:00`;
+    document.getElementById('sl_endTime').value   = `${String(startH + 1).padStart(2,'0')}:00`;
+
+    // Load subjects
+    if (allSubjects.length === 0) {
+      const res = await api.get('/timetable/subjects');
+      if (res?.success) allSubjects = res.data;
+    }
+    const subSel = document.getElementById('sl_subject');
+    subSel.innerHTML = '<option value="">Select subject...</option>';
+    allSubjects.forEach(s => {
+      subSel.innerHTML += `<option value="${s.id}">${s.name} (${s.code})</option>`;
+    });
+
+    // Load teachers
+    if (allTeachers.length === 0) {
+      const res = await api.get('/teachers');
+      if (res?.success) allTeachers = res.data;
+    }
+    const teachSel = document.getElementById('sl_teacher');
+    teachSel.innerHTML = '<option value="">No teacher assigned</option>';
+    allTeachers.forEach(t => {
+      teachSel.innerHTML += `<option value="${t.id}">${t.first_name} ${t.last_name}</option>`;
+    });
+
+    document.getElementById('slotModal').classList.add('open');
+  }
+
+  function closeSlotModal() {
+    document.getElementById('slotModal').classList.remove('open');
+  }
+
+  // ── Save New Slot ──────────────────────────────────────
+  async function saveSlot() {
+    const subject_id = document.getElementById('sl_subject').value;
+    const teacher_id = document.getElementById('sl_teacher').value;
+    const start_time = document.getElementById('sl_startTime').value;
+    const end_time   = document.getElementById('sl_endTime').value;
+    const room       = document.getElementById('sl_room').value.trim();
+
+    if (!subject_id || !start_time || !end_time) {
+      showToast('Subject, start time, and end time are required.', 'error');
+      return;
+    }
+
+    const btn = document.getElementById('saveSlotBtn');
+    btn.textContent = 'Adding...';
+    btn.disabled    = true;
+
+    const res = await api.post('/timetable', {
+      class_id:   currentClassId,
+      subject_id,
+      teacher_id: teacher_id || null,
+      day:        currentDay,
+      period:     currentPeriod,
+      start_time,
+      end_time,
+      room:       room || null,
+    });
+
+    btn.textContent = 'Add Slot';
+    btn.disabled    = false;
+
+    if (res?.success) {
+      showToast(`Slot added for ${currentDay} Period ${currentPeriod}!`, 'success');
+      closeSlotModal();
+      loadTimetable();
+    } else {
+      showToast(res?.message || 'Failed to add slot.', 'error');
+    }
+  }
+
+  // ── Remove Slot ────────────────────────────────────────
+  async function removeSlot(slotId) {
+    if (!confirm('Remove this timetable slot?')) return;
+    const res = await api.delete(`/timetable/${slotId}`);
+    if (res?.success) {
+      showToast('Slot removed.', 'success');
+      loadTimetable();
+    } else {
+      showToast('Failed to remove slot.', 'error');
+    }
+  }
+
+  function editSlot(slotId) {
+    // Future: open edit modal
+  }
+
+  function switchView() {
+    const mode = document.getElementById('viewMode').value;
+    if (mode === 'teacher') {
+      showToast('Teacher view: select teacher from Teachers page', 'success');
+    }
+  }
+
+  // ── Init ───────────────────────────────────────────────
+  loadClasses();
+</script>
+</body>
+</html>

@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ASMS — Login</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=Noto+Sans+Ethiopic:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --gold:    #F5A623;
+    --gold2:   #f7c36a;
+    --bg:      #07090f;
+    --bg2:     #0d1117;
+    --card:    #111827;
+    --border:  rgba(245,166,35,0.15);
+    --text:    #E2E8F0;
+    --text2:   #94A3B8;
+    --text3:   #4B5563;
+    --red:     #FC8181;
+    --green:   #68D391;
+  }
+
+  body {
+    font-family: 'Sora', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    position: relative;
+  }
+
+  /* Animated background */
+  .bg-grid {
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(245,166,35,0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(245,166,35,0.04) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+  }
+
+  .bg-glow {
+    position: fixed;
+    width: 600px; height: 600px;
+    background: radial-gradient(circle, rgba(245,166,35,0.08) 0%, transparent 70%);
+    top: -200px; left: -200px;
+    pointer-events: none;
+    animation: drift 8s ease-in-out infinite alternate;
+  }
+
+  .bg-glow2 {
+    position: fixed;
+    width: 400px; height: 400px;
+    background: radial-gradient(circle, rgba(99,179,237,0.06) 0%, transparent 70%);
+    bottom: -100px; right: -100px;
+    pointer-events: none;
+    animation: drift 10s ease-in-out infinite alternate-reverse;
+  }
+
+  @keyframes drift {
+    from { transform: translate(0, 0); }
+    to   { transform: translate(60px, 40px); }
+  }
+
+  /* Login Card */
+  .login-wrap {
+    position: relative;
+    z-index: 10;
+    width: 100%;
+    max-width: 420px;
+    padding: 20px;
+    animation: slideUp 0.6s cubic-bezier(.4,0,.2,1);
+  }
+
+  @keyframes slideUp {
+    from { opacity: 0; transform: translateY(30px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .login-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 40px;
+    box-shadow:
+      0 0 0 1px rgba(245,166,35,0.05),
+      0 20px 60px rgba(0,0,0,0.6),
+      0 0 80px rgba(245,166,35,0.04);
+  }
+
+  .logo-area {
+    text-align: center;
+    margin-bottom: 36px;
+  }
+
+  .logo-icon {
+    width: 64px; height: 64px;
+    background: linear-gradient(135deg, var(--gold), #e8891a);
+    border-radius: 18px;
+    display: inline-flex;
+    align-items: center; justify-content: center;
+    font-size: 30px;
+    margin-bottom: 16px;
+    box-shadow: 0 8px 30px rgba(245,166,35,0.35);
+    animation: pulse 3s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { box-shadow: 0 8px 30px rgba(245,166,35,0.35); }
+    50%       { box-shadow: 0 8px 50px rgba(245,166,35,0.55); }
+  }
+
+  .logo-name {
+    font-size: 22px;
+    font-weight: 800;
+    background: linear-gradient(90deg, var(--gold), var(--gold2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    letter-spacing: -0.5px;
+  }
+
+  .logo-amharic {
+    font-family: 'Noto Sans Ethiopic', sans-serif;
+    font-size: 13px;
+    color: var(--text3);
+    margin-top: 4px;
+    display: block;
+  }
+
+  .login-title {
+    font-size: 14px;
+    color: var(--text2);
+    margin-top: 8px;
+  }
+
+  /* Form */
+  .form-group {
+    margin-bottom: 18px;
+  }
+
+  .form-label {
+    display: block;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text3);
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    margin-bottom: 8px;
+  }
+
+  .form-input {
+    width: 100%;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 10px;
+    padding: 12px 16px;
+    color: var(--text);
+    font-size: 14px;
+    font-family: 'Sora', sans-serif;
+    outline: none;
+    transition: all 0.2s;
+  }
+
+  .form-input:focus {
+    border-color: var(--gold);
+    background: rgba(245,166,35,0.05);
+    box-shadow: 0 0 0 3px rgba(245,166,35,0.1);
+  }
+
+  .form-input::placeholder { color: var(--text3); }
+
+  .role-select {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 20px;
+  }
+
+  .role-btn {
+    padding: 10px 8px;
+    border-radius: 10px;
+    border: 1px solid rgba(255,255,255,0.08);
+    background: transparent;
+    color: var(--text2);
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: 'Sora', sans-serif;
+    text-align: center;
+  }
+
+  .role-btn:hover { border-color: var(--gold); color: var(--gold); }
+  .role-btn.active {
+    border-color: var(--gold);
+    background: rgba(245,166,35,0.1);
+    color: var(--gold);
+  }
+
+  .btn-login {
+    width: 100%;
+    padding: 14px;
+    background: linear-gradient(135deg, var(--gold), #e8891a);
+    border: none;
+    border-radius: 10px;
+    color: #000;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: 'Sora', sans-serif;
+    transition: all 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .btn-login:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(245,166,35,0.4);
+  }
+
+  .btn-login:active { transform: translateY(0); }
+
+  .btn-login.loading { pointer-events: none; }
+  .btn-login.loading::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+    animation: shimmer 1s infinite;
+  }
+
+  @keyframes shimmer {
+    from { transform: translateX(-100%); }
+    to   { transform: translateX(100%); }
+  }
+
+  .error-msg {
+    display: none;
+    background: rgba(252,129,129,0.1);
+    border: 1px solid rgba(252,129,129,0.3);
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 13px;
+    color: var(--red);
+    margin-bottom: 16px;
+    text-align: center;
+  }
+
+  .error-msg.show { display: block; animation: fadeIn 0.3s ease; }
+
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+  .footer-text {
+    text-align: center;
+    font-size: 11px;
+    color: var(--text3);
+    margin-top: 24px;
+  }
+
+  .divider {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 20px 0;
+    color: var(--text3);
+    font-size: 11px;
+  }
+  .divider::before, .divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: rgba(255,255,255,0.06);
+  }
+</style>
+</head>
+<body>
+
+<div class="bg-grid"></div>
+<div class="bg-glow"></div>
+<div class="bg-glow2"></div>
+
+<div class="login-wrap">
+  <div class="login-card">
+    <div class="logo-area">
+      <div class="logo-icon">🎓</div>
+      <div class="logo-name">Äbugida SMS</div>
+      <span class="logo-amharic">አቡጊዳ ትምህርት ቤት አስተዳደር</span>
+      <div class="login-title">Sign in to your account</div>
+    </div>
+
+    <div class="error-msg" id="errorMsg">Invalid email or password.</div>
+
+    <div class="form-group">
+      <label class="form-label">Email Address</label>
+      <input class="form-input" type="email" id="email"
+        placeholder="admin@asms.et" autocomplete="email">
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Password</label>
+      <input class="form-input" type="password" id="password"
+        placeholder="••••••••" autocomplete="current-password">
+    </div>
+
+    <button class="btn-login" id="loginBtn" onclick="handleLogin()">
+      Sign In
+    </button>
+
+    <div class="footer-text">
+      Äbugida School Management System v1.0<br>
+      <span style="color:#374151">© 2026 ASMS — For Ethiopian Schools</span>
+    </div>
+  </div>
+</div>
+
+<script>
+  const API = 'http://localhost:3000/api';
+
+  // Allow Enter key to submit
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') handleLogin();
+  });
+
+  async function handleLogin() {
+    const email    = document.getElementById('email').value.trim();
+    const password = document.getElementById('password').value;
+    const btn      = document.getElementById('loginBtn');
+    const errorMsg = document.getElementById('errorMsg');
+
+    // Hide previous error
+    errorMsg.classList.remove('show');
+
+    // Validate
+    if (!email || !password) {
+      showError('Please enter your email and password.');
+      return;
+    }
+
+    // Show loading state
+    btn.classList.add('loading');
+    btn.textContent = 'Signing in...';
+
+    try {
+      const res  = await fetch(`${API}/auth/login`, {
+        method:      'POST',
+        headers:     { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body:        JSON.stringify({ email, password }),
+      });
+
+      const data = await res.json();
+
+      if (data.success) {
+        // Save token and user info
+        localStorage.setItem('asms_token', data.data.accessToken);
+        localStorage.setItem('asms_user',  JSON.stringify(data.data.user));
+
+        // Redirect to dashboard
+        window.location.href = 'dashboard.html';
+      } else {
+        showError(data.message || 'Login failed.');
+      }
+
+    } catch (err) {
+      showError('Cannot connect to server. Make sure the backend is running.');
+    } finally {
+      btn.classList.remove('loading');
+      btn.textContent = 'Sign In';
+    }
+  }
+
+  function showError(msg) {
+    const el = document.getElementById('errorMsg');
+    el.textContent = msg;
+    el.classList.add('show');
+  }
+
+  // If already logged in, go to dashboard
+  if (localStorage.getItem('asms_token')) {
+    window.location.href = 'dashboard.html';
+  }
+</script>
+</body>
+</html>

@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ASMS — Students</title>
+<link rel="stylesheet" href="assets/css/main.css">
+</head>
+<body>
+
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-icon">🎓</div>
+    <div class="logo-text">
+      <div class="name">ASMS</div>
+      <span class="sub">አቡጊዳ ትምህርት ቤት</span>
+    </div>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-section">Overview</div>
+    <a href="dashboard.html" class="nav-item"><span class="nav-icon">📊</span> Dashboard</a>
+    <div class="nav-section">Academic</div>
+    <a href="students.html" class="nav-item active"><span class="nav-icon">👨‍🎓</span> Students</a>
+    <a href="teachers.html" class="nav-item"><span class="nav-icon">👩‍🏫</span> Teachers</a>
+    <a href="attendance.html" class="nav-item"><span class="nav-icon">📅</span> Attendance</a>
+    <a href="grades.html" class="nav-item"><span class="nav-icon">📝</span> Grades & Exams</a>
+    <div class="nav-section">Operations</div>
+    <a href="finance.html" class="nav-item"><span class="nav-icon">💰</span> Finance</a>
+  </nav>
+  <div class="sidebar-footer">
+    <div class="user-card" onclick="logout()">
+      <div class="user-avatar" id="userInitials">AD</div>
+      <div>
+        <div class="user-name" id="userName">Administrator</div>
+        <div class="user-role" id="userRole">Admin</div>
+      </div>
+      <span style="margin-left:auto;color:var(--text3);font-size:11px">↪</span>
+    </div>
+  </div>
+</aside>
+
+<main class="main">
+  <div class="topbar">
+    <div class="page-title">
+      Students
+      <span class="sub">ተማሪዎች</span>
+    </div>
+    <button class="btn btn-primary" onclick="openAddModal()">+ Register Student</button>
+  </div>
+
+  <div class="content">
+
+    <!-- Search & Filter Bar -->
+    <div style="display:flex;gap:12px;margin-bottom:20px;align-items:center">
+      <div class="search-bar" style="flex:1">
+        <span>🔍</span>
+        <input type="text" id="searchInput" placeholder="Search by name, ID..." oninput="debounceSearch()">
+      </div>
+      <select class="form-control" style="width:160px" id="filterGender" onchange="loadStudents()">
+        <option value="">All Genders</option>
+        <option value="male">Male</option>
+        <option value="female">Female</option>
+      </select>
+      <select class="form-control" style="width:140px" id="filterStatus" onchange="loadStudents()">
+        <option value="active">Active</option>
+        <option value="graduated">Graduated</option>
+        <option value="withdrawn">Withdrawn</option>
+      </select>
+    </div>
+
+    <!-- Students Table -->
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-title">👨‍🎓 Student Directory</div>
+        <span id="studentCount" style="font-size:12px;color:var(--text3)">Loading...</span>
+      </div>
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Student ID</th>
+              <th>Full Name</th>
+              <th>Gender</th>
+              <th>Class</th>
+              <th>Phone</th>
+              <th>Status</th>
+              <th>Enrolled</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="studentsBody">
+            <tr><td colspan="8"><div class="loading-state"><div class="spinner"></div> Loading students...</div></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Pagination -->
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 22px;border-top:1px solid var(--border)">
+        <span id="pageInfo" style="font-size:12px;color:var(--text3)"></span>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-ghost btn-sm" id="prevBtn" onclick="changePage(-1)">← Prev</button>
+          <button class="btn btn-ghost btn-sm" id="nextBtn" onclick="changePage(1)">Next →</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<!-- ═══ ADD STUDENT MODAL ═══ -->
+<div class="modal-overlay" id="addModal">
+  <div class="modal">
+    <div class="modal-title">
+      ➕ Register New Student
+      <button class="modal-close" onclick="closeAddModal()">✕</button>
+    </div>
+
+    <div class="form-grid">
+      <div class="form-group">
+        <label class="form-label">First Name *</label>
+        <input class="form-control" type="text" id="f_firstName" placeholder="e.g. Dawit">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Last Name *</label>
+        <input class="form-control" type="text" id="f_lastName" placeholder="e.g. Tadesse">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Father's Name</label>
+        <input class="form-control" type="text" id="f_fathersName" placeholder="e.g. Bekele">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Gender *</label>
+        <select class="form-control" id="f_gender">
+          <option value="">Select...</option>
+          <option value="male">Male</option>
+          <option value="female">Female</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Date of Birth</label>
+        <input class="form-control" type="date" id="f_dob">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Phone</label>
+        <input class="form-control" type="tel" id="f_phone" placeholder="+251 9XX XXX XXX">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Region</label>
+        <input class="form-control" type="text" id="f_region" placeholder="e.g. Addis Ababa">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Woreda</label>
+        <input class="form-control" type="text" id="f_woreda" placeholder="e.g. Bole">
+      </div>
+      <div class="form-group">
+  <label class="form-label">Class *</label>
+  <select class="form-control" id="f_class">
+    <option value="">Select class...</option>
+  </select>
+</div>
+<div class="form-group">
+  <label class="form-label">Enrollment Date</label>
+  <input class="form-control" type="date" id="f_enrollDate">
+</div>
+      <div class="form-group form-full">
+        <label class="form-label">Previous School</label>
+        <input class="form-control" type="text" id="f_prevSchool" placeholder="Previous school name">
+      </div>
+    </div>
+
+    <div style="display:flex;gap:10px;margin-top:20px;justify-content:flex-end">
+      <button class="btn btn-ghost" onclick="closeAddModal()">Cancel</button>
+      <button class="btn btn-primary" id="saveBtn" onclick="saveStudent()">Register Student</button>
+    </div>
+  </div>
+</div>
+
+<script src="assets/js/api.js"></script>
+<script>
+  requireAuth();
+
+  const user = getUser();
+  if (user) {
+    document.getElementById('userName').textContent    = user.email.split('@')[0];
+    document.getElementById('userRole').textContent    = user.role;
+    document.getElementById('userInitials').textContent = user.email[0].toUpperCase();
+  }
+
+  let currentPage  = 1;
+  let totalPages   = 1;
+  let searchTimer  = null;
+
+  // ── Load students ──────────────────────────────────────
+  async function loadStudents() {
+    const search = document.getElementById('searchInput').value;
+    const gender = document.getElementById('filterGender').value;
+    const status = document.getElementById('filterStatus').value;
+
+    const params = new URLSearchParams({
+      page: currentPage, limit: 15,
+      ...(search ? { search } : {}),
+      ...(gender ? { gender } : {}),
+      ...(status ? { status } : {}),
+    });
+
+    document.getElementById('studentsBody').innerHTML =
+      `<tr><td colspan="8"><div class="loading-state"><div class="spinner"></div></div></td></tr>`;
+
+    const res = await api.get(`/students?${params}`);
+
+    if (!res?.success) {
+      document.getElementById('studentsBody').innerHTML =
+        `<tr><td colspan="8"><div class="empty-state"><p>Failed to load students</p></div></td></tr>`;
+      return;
+    }
+
+    const { students, pagination } = res.data;
+    totalPages = pagination.totalPages;
+
+    document.getElementById('studentCount').textContent = `${pagination.total} student(s)`;
+    document.getElementById('pageInfo').textContent =
+      `Page ${pagination.page} of ${pagination.totalPages} — ${pagination.total} total`;
+    document.getElementById('prevBtn').disabled = currentPage <= 1;
+    document.getElementById('nextBtn').disabled = currentPage >= totalPages;
+
+    if (students.length === 0) {
+      document.getElementById('studentsBody').innerHTML =
+        `<tr><td colspan="8"><div class="empty-state"><div class="empty-icon">👤</div><p>No students found</p></div></td></tr>`;
+      return;
+    }
+
+    document.getElementById('studentsBody').innerHTML = students.map(s => `
+      <tr>
+        <td style="font-family:'JetBrains Mono';font-size:11px;color:var(--text3)">${s.student_number}</td>
+        <td class="primary">${s.first_name} ${s.last_name}${s.fathers_name ? ' ' + s.fathers_name : ''}</td>
+        <td>${s.gender === 'male' ? '♂' : '♀'} ${s.gender}</td>
+        <td>${s.class_name || '<span style="color:var(--text3)">—</span>'}</td>
+        <td style="font-size:12px">${s.phone || '—'}</td>
+        <td>${statusBadge(s.status)}</td>
+        <td style="font-size:12px;color:var(--text3)">${formatDate(s.enrollment_date)}</td>
+        <td>
+          <button class="btn btn-ghost btn-sm" onclick="viewStudent('${s.id}')">View</button>
+        </td>
+      </tr>
+    `).join('');
+  }
+
+  function changePage(dir) {
+    const np = currentPage + dir;
+    if (np < 1 || np > totalPages) return;
+    currentPage = np;
+    loadStudents();
+  }
+
+  function debounceSearch() {
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(() => { currentPage = 1; loadStudents(); }, 400);
+  }
+
+  // ── Modal ──────────────────────────────────────────────
+  async function openAddModal() {
+    document.getElementById('addModal').classList.add('open');
+    document.getElementById('f_enrollDate').value = new Date().toISOString().split('T')[0];
+
+    // Load classes into dropdown
+    const sel = document.getElementById('f_class');
+    if (sel.options.length <= 1) {
+      const res = await api.get('/timetable/classes');
+      if (res?.success) {
+        res.data.forEach(c => {
+          sel.innerHTML += `<option value="${c.id}">${c.name}</option>`;
+        });
+      }
+    }
+  }
+
+  function closeAddModal() {
+    document.getElementById('addModal').classList.remove('open');
+    // Clear form
+    ['f_firstName','f_lastName','f_fathersName','f_phone',
+     'f_region','f_woreda','f_prevSchool','f_dob'].forEach(id => {
+      document.getElementById(id).value = '';
+    });
+    document.getElementById('f_gender').value = '';
+  }
+
+  async function saveStudent() {
+    const first_name   = document.getElementById('f_firstName').value.trim();
+    const last_name    = document.getElementById('f_lastName').value.trim();
+    const fathers_name = document.getElementById('f_fathersName').value.trim();
+    const gender       = document.getElementById('f_gender').value;
+    const phone        = document.getElementById('f_phone').value.trim();
+    const region       = document.getElementById('f_region').value.trim();
+    const woreda       = document.getElementById('f_woreda').value.trim();
+    const date_of_birth = document.getElementById('f_dob').value;
+    const previous_school = document.getElementById('f_prevSchool').value.trim();
+
+    if (!first_name || !last_name || !gender) {
+      showToast('First name, last name, and gender are required.', 'error');
+      return;
+    }
+
+    const btn = document.getElementById('saveBtn');
+    btn.textContent = 'Saving...';
+    btn.disabled    = true;
+
+    const res = await api.post('/students', {
+      first_name, last_name, fathers_name,
+      gender, phone, region, woreda,
+      date_of_birth: date_of_birth || null,
+      previous_school: previous_school || null,
+      class_id:        document.getElementById('f_class').value || null,
+            enrollment_date: document.getElementById('f_enrollDate').value || null,
+    });
+
+    btn.textContent = 'Register Student';
+    btn.disabled    = false;
+
+    if (res?.success) {
+      showToast(`${res.data.student_number} registered successfully!`, 'success');
+      closeAddModal();
+      loadStudents();
+    } else {
+      showToast(res?.message || 'Failed to register student.', 'error');
+    }
+  }
+
+  function viewStudent(id) {
+    window.location.href = `student-detail.html?id=${id}`;
+  }
+
+  // Init
+  loadStudents();
+</script>
+</body>
+</html>

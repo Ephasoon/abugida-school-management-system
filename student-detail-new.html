@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ASMS — Student Profile</title>
+<link rel="stylesheet" href="assets/css/main.css">
+<style>
+  .pdf-btn {
+    display:inline-flex;align-items:center;gap:7px;
+    padding:10px 18px;border-radius:var(--radius-sm);
+    font-size:13px;font-weight:700;cursor:pointer;
+    border:none;font-family:'Sora';transition:all 0.2s;text-decoration:none;
+  }
+  .pdf-btn.gold { background:linear-gradient(135deg,var(--gold),#e8891a);color:#000; }
+  .pdf-btn.gold:hover { transform:translateY(-2px);box-shadow:0 6px 20px rgba(245,166,35,0.4); }
+  .pdf-btn.blue { background:linear-gradient(135deg,var(--blue),#2471a3);color:#fff; }
+  .pdf-btn.blue:hover { transform:translateY(-2px);box-shadow:0 6px 20px rgba(99,179,237,0.4); }
+</style>
+</head>
+<body>
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-icon">🎓</div>
+    <div class="logo-text"><div class="name">ASMS</div><span class="sub">አቡጊዳ ትምህርት ቤት</span></div>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-section">Overview</div>
+    <a href="dashboard.html" class="nav-item"><span class="nav-icon">📊</span> Dashboard</a>
+    <a href="analytics.html" class="nav-item"><span class="nav-icon">📈</span> Analytics</a>
+    <div class="nav-section">Academic</div>
+    <a href="students.html" class="nav-item active"><span class="nav-icon">👨‍🎓</span> Students</a>
+    <a href="teachers.html" class="nav-item"><span class="nav-icon">👩‍🏫</span> Teachers</a>
+    <a href="attendance.html" class="nav-item"><span class="nav-icon">📅</span> Attendance</a>
+    <a href="grades.html" class="nav-item"><span class="nav-icon">📝</span> Grades & Exams</a>
+    <a href="timetable.html" class="nav-item"><span class="nav-icon">🗓️</span> Timetable</a>
+    <a href="exam-schedule.html" class="nav-item"><span class="nav-icon">📋</span> Exam Schedule</a>
+    <a href="academic-years.html" class="nav-item"><span class="nav-icon">🏫</span> Academic Years</a>
+    <div class="nav-section">Operations</div>
+    <a href="finance.html" class="nav-item"><span class="nav-icon">💰</span> Finance</a>
+    <a href="documents.html" class="nav-item"><span class="nav-icon">📁</span> Documents</a>
+  </nav>
+  <div class="sidebar-footer">
+    <div class="user-card" onclick="logout()">
+      <div class="user-avatar" id="userInitials">AD</div>
+      <div><div class="user-name" id="userName">Administrator</div>
+        <div class="user-role" id="userRole">Admin</div></div>
+      <span style="margin-left:auto;color:var(--text3);font-size:11px">↪</span>
+    </div>
+  </div>
+</aside>
+
+<main class="main">
+  <div class="topbar">
+    <div class="page-title" id="pageTitle">
+      Student Profile<span class="sub">የተማሪ መገለጫ</span>
+    </div>
+    <a href="students.html" class="btn btn-ghost">← Back to Students</a>
+  </div>
+  <div class="content" id="mainContent">
+    <div class="loading-state" style="padding:80px">
+      <div class="spinner"></div> Loading student profile...
+    </div>
+  </div>
+</main>
+
+<script src="assets/js/api.js"></script>
+<script>
+  requireAuth();
+  const user = getUser();
+  if (user) {
+    document.getElementById('userName').textContent     = user.email.split('@')[0];
+    document.getElementById('userRole').textContent     = user.role;
+    document.getElementById('userInitials').textContent = user.email[0].toUpperCase();
+  }
+
+  const params    = new URLSearchParams(window.location.search);
+  const studentId = params.get('id');
+  if (!studentId) window.location.href = 'students.html';
+
+  const API_BASE = 'http://localhost:3000/api';
+
+  // ── PDF Download ────────────────────────────────────────────
+  async function downloadPDF(url, filename) {
+    showToast('Generating PDF...', 'success');
+    try {
+      const res = await fetch(`${API_BASE}${url}`, {
+        headers: { 'Authorization': `Bearer ${getToken()}` },
+        credentials: 'include',
+      });
+      if (!res.ok) { showToast('Failed to generate PDF.', 'error'); return; }
+      const blob = await res.blob();
+      const link = document.createElement('a');
+      link.href  = URL.createObjectURL(blob);
+      link.download = filename;
+      link.click();
+      URL.revokeObjectURL(link.href);
+    } catch(err) { showToast('Error downloading PDF.', 'error'); }
+  }
+
+  function downloadReportCard() {
+    downloadPDF(`/pdf/report-card/${studentId}`, `report-card-${studentId}.pdf`);
+  }
+  function downloadIDCard() {
+    downloadPDF(`/pdf/student-id/${studentId}`, `id-card-${studentId}.pdf`);
+  }
+
+  function infoRow(label, value, full=false) {
+    return `<div ${full?'style="grid-column:1/-1"':''}>
+      <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:3px">${label}</div>
+      <div style="font-size:13px;font-weight:500">${value}</div>
+    </div>`;
+  }
+
+  function gradeColor(l) {
+    if (!l) return 'badge-gray';
+    if (l.startsWith('A')) return 'badge-green';
+    if (l.startsWith('B')) return 'badge-blue';
+    if (l.startsWith('C')) return 'badge-gold';
+    return 'badge-red';
+  }
+
+  // ── Load Profile ────────────────────────────────────────────
+  async function loadProfile() {
+    const [profileRes, gradesRes, feesRes, attRes] = await Promise.all([
+      api.get(`/students/${studentId}`),
+      api.get(`/grades/report-card/${studentId}`),
+      api.get(`/finance/student/${studentId}`),
+      api.get(`/attendance/student/${studentId}`),
+    ]);
+
+    if (!profileRes?.success) {
+      document.getElementById('mainContent').innerHTML =
+        `<div class="empty-state" style="padding:80px">
+          <div class="empty-icon">❌</div><p>Student not found.</p>
+          <a href="students.html" class="btn btn-ghost" style="margin-top:16px">← Back</a>
+        </div>`;
+      return;
+    }
+
+    const s   = profileRes.data;
+    const gr  = gradesRes?.data;
+    const fee = feesRes?.data;
+    const att = attRes?.data;
+
+    document.getElementById('pageTitle').innerHTML =
+      `${s.first_name} ${s.last_name} <span class="sub">${s.student_number}</span>`;
+
+    document.getElementById('mainContent').innerHTML = `
+
+      <!-- PDF Buttons -->
+      <div style="display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap">
+        <button class="pdf-btn gold" onclick="downloadReportCard()">📄 Download Report Card</button>
+        <button class="pdf-btn blue" onclick="downloadIDCard()">🪪 Download ID Card</button>
+      </div>
+
+      <div class="two-col" style="margin-bottom:20px">
+
+        <!-- Profile -->
+        <div class="panel">
+          <div class="panel-header">
+            <div class="panel-title">👤 Personal Information</div>
+            <span class="badge ${s.status==='active'?'badge-green':'badge-red'}">${s.status}</span>
+          </div>
+          <div class="panel-body">
+            <div style="display:flex;align-items:center;gap:16px;margin-bottom:20px;
+              padding-bottom:20px;border-bottom:1px solid var(--border)">
+              <div style="width:64px;height:64px;
+                background:linear-gradient(135deg,var(--purple),var(--blue));
+                border-radius:16px;display:flex;align-items:center;justify-content:center;
+                font-size:28px;font-weight:800;color:#fff;flex-shrink:0">
+                ${s.first_name[0]}${s.last_name[0]}
+              </div>
+              <div>
+                <div style="font-size:18px;font-weight:800">
+                  ${s.first_name} ${s.last_name}${s.fathers_name?' '+s.fathers_name:''}
+                </div>
+                <div style="font-size:12px;color:var(--text3);margin-top:2px">${s.student_number}</div>
+                <div style="font-size:12px;color:var(--gold);margin-top:2px">${s.class_name||'No class assigned'}</div>
+              </div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+              ${infoRow('Gender', s.gender||'—')}
+              ${infoRow('Date of Birth', formatDate(s.date_of_birth))}
+              ${infoRow('Phone', s.phone||'—')}
+              ${infoRow('Enrolled', formatDate(s.enrollment_date))}
+              ${infoRow('Region', s.region||'—')}
+              ${infoRow('Woreda', s.woreda||'—')}
+              ${infoRow('Previous School', s.previous_school||'—', true)}
+            </div>
+          </div>
+        </div>
+
+        <!-- Right column -->
+        <div>
+          <!-- Academic -->
+          <div class="panel" style="margin-bottom:16px">
+            <div class="panel-header"><div class="panel-title">📝 Academic Summary</div></div>
+            <div class="panel-body">
+              ${gr ? `
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+                  <div style="background:var(--bg3);border-radius:8px;padding:14px;text-align:center">
+                    <div style="font-size:26px;font-weight:800;color:var(--gold)">${gr.academic_summary?.gpa||'0.00'}</div>
+                    <div style="font-size:11px;color:var(--text3)">GPA</div>
+                  </div>
+                  <div style="background:var(--bg3);border-radius:8px;padding:14px;text-align:center">
+                    <div style="font-size:18px;font-weight:800;color:${gr.academic_summary?.result==='PASS'?'var(--green)':'var(--red)'}">
+                      ${gr.academic_summary?.result||'—'}
+                    </div>
+                    <div style="font-size:11px;color:var(--text3)">Result</div>
+                  </div>
+                </div>`
+              : '<p style="color:var(--text3);font-size:12px">No grades yet</p>'}
+            </div>
+          </div>
+
+          <!-- Attendance -->
+          <div class="panel" style="margin-bottom:16px">
+            <div class="panel-header"><div class="panel-title">📅 Attendance</div></div>
+            <div class="panel-body">
+              ${att?.overall ? `
+                <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">
+                  <div style="background:var(--bg3);border-radius:8px;padding:10px;text-align:center">
+                    <div style="font-size:20px;font-weight:800;color:var(--green)">${att.overall.rate||0}%</div>
+                    <div style="font-size:10px;color:var(--text3)">Rate</div>
+                  </div>
+                  <div style="background:var(--bg3);border-radius:8px;padding:10px;text-align:center">
+                    <div style="font-size:20px;font-weight:800">${att.overall.present||0}</div>
+                    <div style="font-size:10px;color:var(--text3)">Present</div>
+                  </div>
+                  <div style="background:var(--bg3);border-radius:8px;padding:10px;text-align:center">
+                    <div style="font-size:20px;font-weight:800;color:var(--red)">${att.overall.absent||0}</div>
+                    <div style="font-size:10px;color:var(--text3)">Absent</div>
+                  </div>
+                </div>`
+              : '<p style="color:var(--text3);font-size:12px">No attendance records yet</p>'}
+            </div>
+          </div>
+
+          <!-- Fees -->
+          <div class="panel">
+            <div class="panel-header"><div class="panel-title">💰 Fee Balance</div></div>
+            <div class="panel-body">
+              ${fee?.overview ? `
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+                  <span style="font-size:12px;color:var(--text3)">Total Due</span>
+                  <span style="font-family:'JetBrains Mono';font-size:13px">${formatETB(fee.overview.total_due)}</span>
+                </div>
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+                  <span style="font-size:12px;color:var(--text3)">Total Paid</span>
+                  <span style="font-family:'JetBrains Mono';font-size:13px;color:var(--green)">${formatETB(fee.overview.total_paid)}</span>
+                </div>
+                <div style="display:flex;align-items:center;justify-content:space-between;
+                  padding-top:10px;border-top:1px solid var(--border)">
+                  <span style="font-size:13px;font-weight:700">Balance</span>
+                  <span style="font-family:'JetBrains Mono';font-size:14px;font-weight:800;
+                    color:${parseFloat(fee.overview.balance||0)<=0?'var(--green)':'var(--red)'}">
+                    ${formatETB(fee.overview.balance)}
+                  </span>
+                </div>`
+              : '<p style="color:var(--text3);font-size:12px">No payment data yet</p>'}
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Grades by Subject -->
+      ${gr?.subjects?.length > 0 ? `
+        <div class="panel">
+          <div class="panel-header"><div class="panel-title">📝 Grades by Subject</div></div>
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead><tr><th>Subject</th><th>Average</th><th>Grade</th><th>Exams</th></tr></thead>
+              <tbody>
+                ${gr.subjects.map(sub => `
+                  <tr>
+                    <td class="primary">${sub.subject}</td>
+                    <td style="font-family:'JetBrains Mono';font-size:12px">${sub.average}%</td>
+                    <td><span class="badge ${gradeColor(sub.grade_letter)}">${sub.grade_letter}</span></td>
+                    <td style="font-size:12px;color:var(--text3)">${sub.exams?.length||0} exam(s)</td>
+                  </tr>`).join('')}
+              </tbody>
+            </table>
+          </div>
+        </div>` : ''}
+    `;
+  }
+
+  loadProfile();
+</script>
+</body>
+</html>

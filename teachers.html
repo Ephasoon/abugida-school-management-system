@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ASMS — Teachers</title>
+<link rel="stylesheet" href="assets/css/main.css">
+</head>
+<body>
+
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-icon">🎓</div>
+    <div class="logo-text">
+      <div class="name">ASMS</div>
+      <span class="sub">አቡጊዳ ትምህርት ቤት</span>
+    </div>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-section">Overview</div>
+    <a href="dashboard.html" class="nav-item"><span class="nav-icon">📊</span> Dashboard</a>
+    <div class="nav-section">Academic</div>
+    <a href="students.html" class="nav-item"><span class="nav-icon">👨‍🎓</span> Students</a>
+    <a href="teachers.html" class="nav-item active"><span class="nav-icon">👩‍🏫</span> Teachers</a>
+    <a href="attendance.html" class="nav-item"><span class="nav-icon">📅</span> Attendance</a>
+    <a href="grades.html" class="nav-item"><span class="nav-icon">📝</span> Grades & Exams</a>
+    <div class="nav-section">Operations</div>
+    <a href="finance.html" class="nav-item"><span class="nav-icon">💰</span> Finance</a>
+  </nav>
+  <div class="sidebar-footer">
+    <div class="user-card" onclick="logout()">
+      <div class="user-avatar" id="userInitials">AD</div>
+      <div>
+        <div class="user-name" id="userName">Administrator</div>
+        <div class="user-role" id="userRole">Admin</div>
+      </div>
+      <span style="margin-left:auto;color:var(--text3);font-size:11px">↪</span>
+    </div>
+  </div>
+</aside>
+
+<main class="main">
+  <div class="topbar">
+    <div class="page-title">
+      Teachers
+      <span class="sub">አስተማሪዎች</span>
+    </div>
+    <button class="btn btn-primary" onclick="openAddModal()">+ Add Teacher</button>
+  </div>
+
+  <div class="content">
+
+    <!-- Stats -->
+    <div class="stats-row" style="grid-template-columns:repeat(3,1fr);margin-bottom:24px">
+      <div class="stat-card teal">
+        <div class="stat-icon">👩‍🏫</div>
+        <div class="stat-val" id="totalTeachers">—</div>
+        <div class="stat-label">Total Teachers</div>
+      </div>
+      <div class="stat-card purple">
+        <div class="stat-icon">📚</div>
+        <div class="stat-val" id="totalSubjects">—</div>
+        <div class="stat-label">Subjects Covered</div>
+      </div>
+      <div class="stat-card gold">
+        <div class="stat-icon">🏫</div>
+        <div class="stat-val" id="totalClasses">—</div>
+        <div class="stat-label">Class Assignments</div>
+      </div>
+    </div>
+
+    <div class="two-col">
+
+      <!-- Teachers Table -->
+      <div class="panel" style="grid-column:1/-1">
+        <div class="panel-header">
+          <div class="panel-title">👩‍🏫 Teacher Directory</div>
+          <div class="search-bar" style="width:280px;margin:0">
+            <span>🔍</span>
+            <input type="text" id="searchInput" placeholder="Search teachers..." oninput="debounceSearch()">
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Full Name</th>
+                <th>Email</th>
+                <th>Specialization</th>
+                <th>Subjects</th>
+                <th>Classes</th>
+                <th>Status</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="teachersBody">
+              <tr><td colspan="8">
+                <div class="loading-state"><div class="spinner"></div> Loading teachers...</div>
+              </td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+</main>
+
+<!-- ═══ ADD TEACHER MODAL ═══ -->
+<div class="modal-overlay" id="addModal">
+  <div class="modal" style="max-width:560px">
+    <div class="modal-title">
+      👩‍🏫 Add New Teacher
+      <button class="modal-close" onclick="closeAddModal()">✕</button>
+    </div>
+
+    <div style="background:rgba(245,166,35,0.08);border:1px solid rgba(245,166,35,0.2);border-radius:8px;padding:12px;margin-bottom:18px;font-size:12px;color:var(--gold)">
+      💡 A login account will be created automatically. Default password: <strong>Teacher@1234</strong>
+    </div>
+
+    <div class="form-grid">
+      <div class="form-group">
+        <label class="form-label">First Name *</label>
+        <input class="form-control" type="text" id="t_firstName" placeholder="e.g. Selamawit">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Last Name *</label>
+        <input class="form-control" type="text" id="t_lastName" placeholder="e.g. Bekele">
+      </div>
+      <div class="form-group form-full">
+        <label class="form-label">Email Address *</label>
+        <input class="form-control" type="email" id="t_email" placeholder="teacher@school.et">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Phone</label>
+        <input class="form-control" type="tel" id="t_phone" placeholder="+251 9XX XXX XXX">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Gender</label>
+        <select class="form-control" id="t_gender">
+          <option value="">Select...</option>
+          <option value="male">Male</option>
+          <option value="female">Female</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Specialization</label>
+        <input class="form-control" type="text" id="t_specialization" placeholder="e.g. Mathematics">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Qualification</label>
+        <input class="form-control" type="text" id="t_qualification" placeholder="e.g. B.Ed Mathematics">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Hire Date</label>
+        <input class="form-control" type="date" id="t_hireDate">
+      </div>
+    </div>
+
+    <div style="display:flex;gap:10px;margin-top:20px;justify-content:flex-end">
+      <button class="btn btn-ghost" onclick="closeAddModal()">Cancel</button>
+      <button class="btn btn-primary" id="saveTeacherBtn" onclick="saveTeacher()">Add Teacher</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ TEACHER DETAIL MODAL ═══ -->
+<div class="modal-overlay" id="detailModal">
+  <div class="modal" style="max-width:600px">
+    <div class="modal-title">
+      👩‍🏫 Teacher Profile
+      <button class="modal-close" onclick="closeDetailModal()">✕</button>
+    </div>
+    <div id="detailContent">
+      <div class="loading-state"><div class="spinner"></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ ASSIGN SUBJECTS MODAL ═══ -->
+<div class="modal-overlay" id="subjectModal">
+  <div class="modal" style="max-width:460px">
+    <div class="modal-title">
+      📚 Assign Subjects
+      <button class="modal-close" onclick="closeSubjectModal()">✕</button>
+    </div>
+    <div style="font-size:12px;color:var(--text3);margin-bottom:14px">
+      Select all subjects this teacher will teach:
+    </div>
+    <div id="subjectCheckboxes">
+      <div class="loading-state"><div class="spinner"></div></div>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:20px;justify-content:flex-end">
+      <button class="btn btn-ghost" onclick="closeSubjectModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveSubjects()">Save Subjects</button>
+    </div>
+  </div>
+</div>
+
+<script src="assets/js/api.js"></script>
+<script>
+  requireAuth();
+  const user = getUser();
+  if (user) {
+    document.getElementById('userName').textContent     = user.email.split('@')[0];
+    document.getElementById('userRole').textContent     = user.role;
+    document.getElementById('userInitials').textContent = user.email[0].toUpperCase();
+  }
+
+  let allSubjects       = [];
+  let currentTeacherId  = null;
+  let searchTimer       = null;
+
+  // ── Load Teachers ──────────────────────────────────────
+  async function loadTeachers() {
+    const search = document.getElementById('searchInput').value;
+    const url    = search ? `/teachers?search=${encodeURIComponent(search)}` : '/teachers';
+
+    document.getElementById('teachersBody').innerHTML =
+      `<tr><td colspan="8"><div class="loading-state"><div class="spinner"></div></div></td></tr>`;
+
+    const res = await api.get(url);
+
+    if (!res?.success) {
+      document.getElementById('teachersBody').innerHTML =
+        `<tr><td colspan="8"><div class="empty-state"><p>Failed to load teachers</p></div></td></tr>`;
+      return;
+    }
+
+    const teachers = res.data;
+
+    // Update stats
+    document.getElementById('totalTeachers').textContent = teachers.length;
+    const totalClasses = teachers.reduce((sum, t) => sum + parseInt(t.class_count || 0), 0);
+    document.getElementById('totalClasses').textContent  = totalClasses;
+
+    // Count unique subjects
+    const allSubs = new Set();
+    teachers.forEach(t => (t.subjects || []).forEach(s => allSubs.add(s)));
+    document.getElementById('totalSubjects').textContent = allSubs.size;
+
+    if (teachers.length === 0) {
+      document.getElementById('teachersBody').innerHTML =
+        `<tr><td colspan="8"><div class="empty-state"><div class="empty-icon">👩‍🏫</div><p>No teachers yet. Add one above.</p></div></td></tr>`;
+      return;
+    }
+
+    document.getElementById('teachersBody').innerHTML = teachers.map(t => `
+      <tr>
+        <td style="font-family:'JetBrains Mono';font-size:11px;color:var(--text3)">${t.teacher_number}</td>
+        <td class="primary">${t.first_name} ${t.last_name}</td>
+        <td style="font-size:12px;color:var(--text2)">${t.email || '—'}</td>
+        <td style="font-size:12px">${t.specialization || '—'}</td>
+        <td style="font-size:11px;max-width:150px">
+          ${(t.subjects || []).length > 0
+            ? t.subjects.map(s => `<span class="badge badge-blue" style="margin:1px;font-size:10px">${s}</span>`).join('')
+            : '<span style="color:var(--text3)">None assigned</span>'
+          }
+        </td>
+        <td style="text-align:center">
+          <span class="badge badge-gold">${t.class_count || 0}</span>
+        </td>
+        <td>${t.is_active
+          ? '<span class="badge badge-green">Active</span>'
+          : '<span class="badge badge-red">Inactive</span>'}</td>
+        <td>
+          <div style="display:flex;gap:6px">
+            <button class="btn btn-ghost btn-sm" onclick="viewTeacher('${t.id}')">View</button>
+            <button class="btn btn-ghost btn-sm" onclick="openSubjectModal('${t.id}')">📚</button>
+          </div>
+        </td>
+      </tr>
+    `).join('');
+  }
+
+  function debounceSearch() {
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(loadTeachers, 400);
+  }
+
+  // ── Add Teacher Modal ──────────────────────────────────
+  function openAddModal() {
+    document.getElementById('addModal').classList.add('open');
+    document.getElementById('t_hireDate').value = new Date().toISOString().split('T')[0];
+  }
+
+  function closeAddModal() {
+    document.getElementById('addModal').classList.remove('open');
+    ['t_firstName','t_lastName','t_email','t_phone',
+     't_specialization','t_qualification'].forEach(id => {
+      document.getElementById(id).value = '';
+    });
+    document.getElementById('t_gender').value = '';
+  }
+
+  async function saveTeacher() {
+    const first_name      = document.getElementById('t_firstName').value.trim();
+    const last_name       = document.getElementById('t_lastName').value.trim();
+    const email           = document.getElementById('t_email').value.trim();
+    const phone           = document.getElementById('t_phone').value.trim();
+    const gender          = document.getElementById('t_gender').value;
+    const specialization  = document.getElementById('t_specialization').value.trim();
+    const qualification   = document.getElementById('t_qualification').value.trim();
+    const hire_date       = document.getElementById('t_hireDate').value;
+
+    if (!first_name || !last_name || !email) {
+      showToast('First name, last name, and email are required.', 'error');
+      return;
+    }
+
+    const btn = document.getElementById('saveTeacherBtn');
+    btn.textContent = 'Adding...';
+    btn.disabled    = true;
+
+    const res = await api.post('/teachers', {
+      first_name, last_name, email, phone: phone || null,
+      gender: gender || null,
+      specialization: specialization || null,
+      qualification: qualification || null,
+      hire_date: hire_date || null,
+    });
+
+    btn.textContent = 'Add Teacher';
+    btn.disabled    = false;
+
+    if (res?.success) {
+      showToast(`${res.data.teacher_number} added! Login: ${email} / Teacher@1234`, 'success');
+      closeAddModal();
+      loadTeachers();
+    } else {
+      showToast(res?.message || 'Failed to add teacher.', 'error');
+    }
+  }
+
+  // ── View Teacher Detail ────────────────────────────────
+  async function viewTeacher(id) {
+    document.getElementById('detailModal').classList.add('open');
+    document.getElementById('detailContent').innerHTML =
+      `<div class="loading-state"><div class="spinner"></div></div>`;
+
+    const res = await api.get(`/teachers/${id}`);
+    if (!res?.success) {
+      document.getElementById('detailContent').innerHTML =
+        `<div class="empty-state"><p>Failed to load teacher.</p></div>`;
+      return;
+    }
+
+    const t = res.data;
+    document.getElementById('detailContent').innerHTML = `
+      <!-- Header -->
+      <div style="display:flex;align-items:center;gap:16px;margin-bottom:20px;padding-bottom:20px;border-bottom:1px solid var(--border)">
+        <div style="width:56px;height:56px;background:linear-gradient(135deg,var(--teal),var(--blue));border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:800;color:#fff;flex-shrink:0">
+          ${t.first_name[0]}${t.last_name[0]}
+        </div>
+        <div>
+          <div style="font-size:17px;font-weight:800">${t.first_name} ${t.last_name}</div>
+          <div style="font-size:12px;color:var(--text3)">${t.teacher_number} • ${t.email}</div>
+          <div style="font-size:12px;color:var(--teal);margin-top:2px">${t.specialization || 'No specialization'}</div>
+        </div>
+      </div>
+
+      <!-- Info Grid -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px">
+        ${detailRow('Phone', t.phone || '—')}
+        ${detailRow('Gender', t.gender || '—')}
+        ${detailRow('Qualification', t.qualification || '—')}
+        ${detailRow('Hire Date', formatDate(t.hire_date))}
+      </div>
+
+      <!-- Subjects -->
+      <div style="margin-bottom:16px">
+        <div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:8px">Subjects</div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px">
+          ${t.subjects?.length > 0
+            ? t.subjects.map(s => `<span class="badge badge-blue">${s.name} (${s.code})</span>`).join('')
+            : '<span style="color:var(--text3);font-size:12px">No subjects assigned yet</span>'
+          }
+        </div>
+      </div>
+
+      <!-- Classes -->
+      <div>
+        <div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:8px">Class Assignments</div>
+        ${t.classes?.length > 0
+          ? `<table class="data-table">
+              <thead><tr><th>Class</th><th>Subject</th></tr></thead>
+              <tbody>
+                ${t.classes.map(c => `
+                  <tr>
+                    <td class="primary">${c.name}</td>
+                    <td style="font-size:12px">${c.subject_name}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+             </table>`
+          : '<p style="color:var(--text3);font-size:12px">No classes assigned yet</p>'
+        }
+      </div>
+
+      <div style="margin-top:20px;display:flex;gap:10px">
+        <button class="btn btn-ghost" onclick="openSubjectModal('${t.id}');closeDetailModal()">
+          📚 Assign Subjects
+        </button>
+      </div>
+    `;
+  }
+
+  function detailRow(label, value) {
+    return `
+      <div>
+        <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:3px">${label}</div>
+        <div style="font-size:13px;font-weight:500">${value}</div>
+      </div>
+    `;
+  }
+
+  function closeDetailModal() {
+    document.getElementById('detailModal').classList.remove('open');
+  }
+
+  // ── Assign Subjects Modal ──────────────────────────────
+  async function openSubjectModal(teacherId) {
+    currentTeacherId = teacherId;
+    document.getElementById('subjectModal').classList.add('open');
+    document.getElementById('subjectCheckboxes').innerHTML =
+      `<div class="loading-state"><div class="spinner"></div></div>`;
+
+    // Load subjects if not already loaded
+    if (allSubjects.length === 0) {
+      const res = await api.get('/teachers/subjects');
+      if (res?.success) allSubjects = res.data;
+    }
+
+    // Get teacher's current subjects
+    const tRes = await api.get(`/teachers/${teacherId}`);
+    const currentSubjectIds = (tRes?.data?.subjects || []).map(s => s.id);
+
+    document.getElementById('subjectCheckboxes').innerHTML = allSubjects.map(s => `
+      <label style="display:flex;align-items:center;gap:10px;padding:10px;border-radius:8px;cursor:pointer;transition:background 0.15s;border:1px solid var(--border);margin-bottom:6px"
+        onmouseover="this.style.background='var(--bg3)'"
+        onmouseout="this.style.background='transparent'">
+        <input type="checkbox" id="sub-${s.id}" value="${s.id}"
+          ${currentSubjectIds.includes(s.id) ? 'checked' : ''}
+          style="accent-color:var(--gold);width:16px;height:16px;cursor:pointer">
+        <div>
+          <div style="font-size:13px;font-weight:600">${s.name}</div>
+          <div style="font-size:11px;color:var(--text3)">${s.code}</div>
+        </div>
+      </label>
+    `).join('');
+  }
+
+  function closeSubjectModal() {
+    document.getElementById('subjectModal').classList.remove('open');
+    currentTeacherId = null;
+  }
+
+  async function saveSubjects() {
+    if (!currentTeacherId) return;
+
+    const subject_ids = allSubjects
+      .filter(s => document.getElementById(`sub-${s.id}`)?.checked)
+      .map(s => s.id);
+
+    const res = await api.post(`/teachers/${currentTeacherId}/subjects`, { subject_ids });
+
+    if (res?.success) {
+      showToast(`${subject_ids.length} subject(s) assigned!`, 'success');
+      closeSubjectModal();
+      loadTeachers();
+    } else {
+      showToast(res?.message || 'Failed to assign subjects.', 'error');
+    }
+  }
+
+  loadTeachers();
+</script>
+</body>
+</html>

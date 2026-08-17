@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ASMS — Academic Years</title>
+<link rel="stylesheet" href="assets/css/main.css">
+</head>
+<body>
+
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-icon">🎓</div>
+    <div class="logo-text">
+      <div class="name">ASMS</div>
+      <span class="sub">አቡጊዳ ትምህርት ቤት</span>
+    </div>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-section">Overview</div>
+    <a href="dashboard.html" class="nav-item"><span class="nav-icon">📊</span> Dashboard</a>
+    <div class="nav-section">Academic</div>
+    <a href="students.html" class="nav-item"><span class="nav-icon">👨‍🎓</span> Students</a>
+    <a href="teachers.html" class="nav-item"><span class="nav-icon">👩‍🏫</span> Teachers</a>
+    <a href="attendance.html" class="nav-item"><span class="nav-icon">📅</span> Attendance</a>
+    <a href="grades.html" class="nav-item"><span class="nav-icon">📝</span> Grades & Exams</a>
+    <a href="timetable.html" class="nav-item"><span class="nav-icon">🗓️</span> Timetable</a>
+    <a href="exam-schedule.html" class="nav-item"><span class="nav-icon">📋</span> Exam Schedule</a>
+    <a href="academic-years.html" class="nav-item active"><span class="nav-icon">🏫</span> Academic Years</a>
+    <div class="nav-section">Operations</div>
+    <a href="finance.html" class="nav-item"><span class="nav-icon">💰</span> Finance</a>
+  </nav>
+  <div class="sidebar-footer">
+    <div class="user-card" onclick="logout()">
+      <div class="user-avatar" id="userInitials">AD</div>
+      <div>
+        <div class="user-name" id="userName">Administrator</div>
+        <div class="user-role" id="userRole">Admin</div>
+      </div>
+      <span style="margin-left:auto;color:var(--text3);font-size:11px">↪</span>
+    </div>
+  </div>
+</aside>
+
+<main class="main">
+  <div class="topbar">
+    <div class="page-title">
+      Academic Years
+      <span class="sub">የትምህርት ዓመት አስተዳደር</span>
+    </div>
+    <button class="btn btn-primary" onclick="openCreateModal()">+ New Academic Year</button>
+  </div>
+
+  <div class="content">
+
+    <!-- Current Year Banner -->
+    <div id="currentBanner" style="margin-bottom:24px">
+      <div class="loading-state"><div class="spinner"></div> Loading...</div>
+    </div>
+
+    <!-- All Years Table -->
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-title">🏫 All Academic Years</div>
+        <span id="yearCount" style="font-size:12px;color:var(--text3)"></span>
+      </div>
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Year</th>
+              <th>Start Date</th>
+              <th>End Date</th>
+              <th>Classes</th>
+              <th>Students</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="yearsBody">
+            <tr><td colspan="7">
+              <div class="loading-state"><div class="spinner"></div></div>
+            </td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Stats Panel -->
+    <div class="panel" id="statsPanel" style="display:none">
+      <div class="panel-header">
+        <div class="panel-title" id="statsTitle">📊 Year Statistics</div>
+        <button class="btn btn-ghost btn-sm" onclick="document.getElementById('statsPanel').style.display='none'">✕ Close</button>
+      </div>
+      <div class="panel-body" id="statsBody">
+        <div class="loading-state"><div class="spinner"></div></div>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<!-- CREATE YEAR MODAL -->
+<div class="modal-overlay" id="createModal">
+  <div class="modal" style="max-width:440px">
+    <div class="modal-title">
+      🏫 Create New Academic Year
+      <button class="modal-close" onclick="closeCreateModal()">✕</button>
+    </div>
+    <div style="background:rgba(245,166,35,0.08);border:1px solid rgba(245,166,35,0.2);
+      border-radius:8px;padding:12px;margin-bottom:18px;font-size:12px;color:var(--text2)">
+      💡 After creating a new year, use <strong style="color:var(--gold)">Promote Students</strong>
+      to move students to the next grade.
+    </div>
+    <div class="form-grid">
+      <div class="form-group form-full">
+        <label class="form-label">Year Name * (format: YYYY/YYYY)</label>
+        <input class="form-control" type="text" id="ny_name" placeholder="e.g. 2025/2026">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Start Date *</label>
+        <input class="form-control" type="date" id="ny_start">
+      </div>
+      <div class="form-group">
+        <label class="form-label">End Date *</label>
+        <input class="form-control" type="date" id="ny_end">
+      </div>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:20px;justify-content:flex-end">
+      <button class="btn btn-ghost" onclick="closeCreateModal()">Cancel</button>
+      <button class="btn btn-primary" id="createBtn" onclick="createYear()">Create Year</button>
+    </div>
+  </div>
+</div>
+
+<!-- PROMOTE MODAL -->
+<div class="modal-overlay" id="promoteModal">
+  <div class="modal" style="max-width:500px">
+    <div class="modal-title">
+      🎓 Promote Students
+      <button class="modal-close" onclick="closePromoteModal()">✕</button>
+    </div>
+    <div style="background:rgba(252,129,129,0.08);border:1px solid rgba(252,129,129,0.25);
+      border-radius:8px;padding:12px;margin-bottom:18px;font-size:12px;color:var(--red)">
+      ⚠️ <strong>This cannot be easily undone.</strong>
+      Students move to next grade. Grade 12 → Graduated.
+    </div>
+    <div class="form-grid">
+      <div class="form-group form-full">
+        <label class="form-label">Promote FROM Year *</label>
+        <select class="form-control" id="pr_from">
+          <option value="">Select source year...</option>
+        </select>
+      </div>
+      <div class="form-group form-full">
+        <label class="form-label">Promote TO Year</label>
+        <input class="form-control" id="pr_to" readonly style="background:var(--bg3);color:var(--text3)">
+      </div>
+    </div>
+    <div style="margin:14px 0">
+      <label class="form-label" style="margin-bottom:10px">Grades to Promote</label>
+      <div style="display:flex;flex-wrap:wrap;gap:8px">
+        ${[7,8,9,10,11,12].map(g=>`
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;
+            background:var(--bg3);padding:6px 12px;border-radius:6px;
+            border:1px solid var(--border);font-size:13px">
+            <input type="checkbox" id="pg-${g}" value="${g}" checked
+              style="accent-color:var(--gold);width:14px;height:14px">
+            Grade ${g}${g===12?' →🎓':''}
+          </label>
+        `).join('')}
+      </div>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:20px;justify-content:flex-end">
+      <button class="btn btn-ghost" onclick="closePromoteModal()">Cancel</button>
+      <button class="btn btn-danger" id="promoteBtn" onclick="runPromotion()">🎓 Promote Students</button>
+    </div>
+  </div>
+</div>
+
+<script src="assets/js/api.js"></script>
+<script>
+  requireAuth();
+  const user = getUser();
+  if (user) {
+    document.getElementById('userName').textContent     = user.email.split('@')[0];
+    document.getElementById('userRole').textContent     = user.role;
+    document.getElementById('userInitials').textContent = user.email[0].toUpperCase();
+  }
+
+  let allYears = [];
+  let promoteTargetId = null;
+
+  function fmtDate(d){
+    if(!d) return '—';
+    return new Date(d).toLocaleDateString('en-ET',{year:'numeric',month:'short',day:'numeric'});
+  }
+  function fmtETB(n){return `ETB ${parseFloat(n||0).toLocaleString('en-ET',{minimumFractionDigits:2})}`;}
+
+  async function loadYears(){
+    const res = await api.get('/academic-years');
+    if(!res?.success) return;
+    allYears = res.data;
+    document.getElementById('yearCount').textContent = `${allYears.length} year(s)`;
+
+    // Banner
+    const cur = allYears.find(y=>y.is_current);
+    document.getElementById('currentBanner').innerHTML = cur ? `
+      <div style="background:linear-gradient(135deg,rgba(245,166,35,0.1),rgba(245,166,35,0.05));
+        border:1px solid rgba(245,166,35,0.25);border-radius:var(--radius);padding:20px;
+        display:flex;align-items:center;gap:20px">
+        <div style="font-size:36px">🏫</div>
+        <div>
+          <div style="font-size:11px;color:var(--text3);text-transform:uppercase;
+            letter-spacing:1px;margin-bottom:4px">Current Academic Year</div>
+          <div style="font-size:26px;font-weight:800;color:var(--gold)">${cur.name}</div>
+          <div style="font-size:12px;color:var(--text2);margin-top:4px">
+            ${fmtDate(cur.start_date)} → ${fmtDate(cur.end_date)} &nbsp;|&nbsp;
+            <strong style="color:var(--text)">${cur.class_count}</strong> classes &nbsp;|&nbsp;
+            <strong style="color:var(--text)">${cur.student_count}</strong> students
+          </div>
+        </div>
+        <div style="margin-left:auto">
+          <span class="badge badge-green" style="font-size:12px;padding:6px 14px">✓ Active</span>
+        </div>
+      </div>` :
+      `<div style="background:rgba(252,129,129,0.08);border:1px solid rgba(252,129,129,0.2);
+        border-radius:var(--radius);padding:16px;color:var(--red);font-size:13px">
+        ⚠️ No active academic year. Please activate one below.
+      </div>`;
+
+    // Table
+    document.getElementById('yearsBody').innerHTML = allYears.length
+      ? allYears.map(y=>`
+          <tr>
+            <td class="primary" style="font-size:16px;font-weight:800">${y.name}</td>
+            <td style="font-size:12px;color:var(--text2)">${fmtDate(y.start_date)}</td>
+            <td style="font-size:12px;color:var(--text2)">${fmtDate(y.end_date)}</td>
+            <td><span class="badge badge-blue">${y.class_count||0}</span></td>
+            <td><span class="badge badge-gold">${y.student_count||0}</span></td>
+            <td>${y.is_current
+              ?'<span class="badge badge-green">✓ Current</span>'
+              :'<span class="badge badge-gray">Inactive</span>'}</td>
+            <td>
+              <div style="display:flex;gap:6px;flex-wrap:wrap">
+                <button class="btn btn-ghost btn-sm" onclick="viewStats('${y.id}','${y.name}')">📊 Stats</button>
+                ${!y.is_current?`<button class="btn btn-success btn-sm" onclick="setActive('${y.id}','${y.name}')">✓ Activate</button>`:''}
+                <button class="btn btn-ghost btn-sm" onclick="openPromoteModal('${y.id}','${y.name}')">🎓 Promote</button>
+              </div>
+            </td>
+          </tr>`).join('')
+      : `<tr><td colspan="7"><div class="empty-state">
+           <div class="empty-icon">🏫</div><p>No academic years yet.</p></div></td></tr>`;
+  }
+
+  async function setActive(id, name){
+    if(!confirm(`Set ${name} as the current academic year?`)) return;
+    const res = await api.post(`/academic-years/${id}/activate`,{});
+    if(res?.success){ showToast(`${name} is now active!`,'success'); loadYears(); }
+    else showToast(res?.message||'Failed.','error');
+  }
+
+  async function viewStats(id, name){
+    document.getElementById('statsPanel').style.display='block';
+    document.getElementById('statsTitle').textContent=`📊 ${name} — Statistics`;
+    document.getElementById('statsBody').innerHTML=`<div class="loading-state"><div class="spinner"></div></div>`;
+    document.getElementById('statsPanel').scrollIntoView({behavior:'smooth'});
+
+    const res = await api.get(`/academic-years/${id}/stats`);
+    if(!res?.success){ document.getElementById('statsBody').innerHTML=`<p style="color:var(--text3)">Failed to load.</p>`; return; }
+    const {totals:t,by_grade:bg,exams:e,finance:f} = res.data;
+
+    document.getElementById('statsBody').innerHTML=`
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px">
+        ${[
+          {label:'Students',val:t.total_students||0,color:'var(--gold)'},
+          {label:'Classes',val:t.total_classes||0,color:'var(--teal)'},
+          {label:'Teachers',val:t.total_teachers||0,color:'var(--purple)'},
+          {label:'Exams',val:e?.total_exams||0,color:'var(--green)'},
+        ].map(s=>`<div style="background:var(--bg3);border-radius:8px;padding:14px;text-align:center">
+          <div style="font-size:26px;font-weight:800;color:${s.color}">${s.val}</div>
+          <div style="font-size:11px;color:var(--text3)">${s.label}</div>
+        </div>`).join('')}
+      </div>
+      <div style="display:flex;gap:14px;margin-bottom:20px">
+        <div style="flex:1;background:var(--bg3);border-radius:8px;padding:14px">
+          <div style="font-size:11px;color:var(--text3);margin-bottom:8px">Gender</div>
+          <div style="display:flex;gap:20px">
+            <div style="text-align:center">
+              <div style="font-size:20px;font-weight:800;color:var(--blue)">${t.male_students||0}</div>
+              <div style="font-size:10px;color:var(--text3)">♂ Male</div>
+            </div>
+            <div style="text-align:center">
+              <div style="font-size:20px;font-weight:800;color:var(--purple)">${t.female_students||0}</div>
+              <div style="font-size:10px;color:var(--text3)">♀ Female</div>
+            </div>
+          </div>
+        </div>
+        <div style="flex:1;background:var(--bg3);border-radius:8px;padding:14px">
+          <div style="font-size:11px;color:var(--text3);margin-bottom:8px">Finance</div>
+          <div style="font-size:13px;margin-bottom:4px">Collected: <strong style="color:var(--green)">${fmtETB(f?.total_collected||0)}</strong></div>
+          <div style="font-size:13px">Expected: <strong style="color:var(--text)">${fmtETB(f?.total_expected||0)}</strong></div>
+          <div style="font-size:11px;color:var(--gold);margin-top:4px">${f?.collection_rate||0}% collected</div>
+        </div>
+      </div>
+      <div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;
+        letter-spacing:0.8px;margin-bottom:10px">Students by Grade</div>
+      ${bg?.length>0?bg.map(g=>`
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px">
+          <div style="width:70px;font-size:12px;color:var(--text2)">Grade ${g.grade_level}</div>
+          <div style="flex:1;height:8px;background:var(--bg3);border-radius:4px;overflow:hidden">
+            <div style="height:100%;background:var(--gold);border-radius:4px;
+              width:${bg.length>0?Math.min((g.student_count/Math.max(...bg.map(x=>parseInt(x.student_count)||1)))*100,100):0}%"></div>
+          </div>
+          <div style="font-size:12px;font-weight:700;color:var(--text);width:28px;text-align:right">${g.student_count}</div>
+          <div style="font-size:11px;color:var(--text3);width:70px">${g.section_count} section(s)</div>
+        </div>`).join(''):'<p style="color:var(--text3);font-size:12px">No data</p>'}`;
+  }
+
+  // CREATE MODAL
+  function openCreateModal(){
+    const cur=allYears.find(y=>y.is_current);
+    if(cur){
+      const parts=cur.name.split('/');
+      document.getElementById('ny_name').value=`${parseInt(parts[0])+1}/${parseInt(parts[1])+1}`;
+    }
+    document.getElementById('createModal').classList.add('open');
+  }
+  function closeCreateModal(){ document.getElementById('createModal').classList.remove('open'); }
+
+  async function createYear(){
+    const name=document.getElementById('ny_name').value.trim();
+    const start_date=document.getElementById('ny_start').value;
+    const end_date=document.getElementById('ny_end').value;
+    if(!name||!start_date||!end_date){showToast('All fields are required.','error');return;}
+    const btn=document.getElementById('createBtn');
+    btn.textContent='Creating...';btn.disabled=true;
+    const res=await api.post('/academic-years',{name,start_date,end_date});
+    btn.textContent='Create Year';btn.disabled=false;
+    if(res?.success){showToast(`${name} created!`,'success');closeCreateModal();loadYears();}
+    else showToast(res?.message||'Failed.','error');
+  }
+
+  // PROMOTE MODAL
+  function openPromoteModal(id,name){
+    promoteTargetId=id;
+    document.getElementById('pr_to').value=name;
+    const sel=document.getElementById('pr_from');
+    sel.innerHTML='<option value="">Select source year...</option>';
+    allYears.filter(y=>y.id!==id).forEach(y=>{
+      sel.innerHTML+=`<option value="${y.id}" ${y.is_current?'selected':''}>${y.name}</option>`;
+    });
+    document.getElementById('promoteModal').classList.add('open');
+  }
+  function closePromoteModal(){ document.getElementById('promoteModal').classList.remove('open'); promoteTargetId=null; }
+
+  async function runPromotion(){
+    const fromYearId=document.getElementById('pr_from').value;
+    if(!fromYearId){showToast('Select source year.','error');return;}
+    const grades=[7,8,9,10,11,12].filter(g=>document.getElementById(`pg-${g}`)?.checked);
+    if(!grades.length){showToast('Select at least one grade.','error');return;}
+    const toName=document.getElementById('pr_to').value;
+    if(!confirm(`Promote students to ${toName}?\n\nGrade 12 will be GRADUATED.\n\nContinue?`)) return;
+    const btn=document.getElementById('promoteBtn');
+    btn.textContent='⏳ Promoting...';btn.disabled=true;
+    const res=await api.post(`/academic-years/${promoteTargetId}/promote`,{from_year_id:fromYearId,grade_levels:grades});
+    btn.textContent='🎓 Promote Students';btn.disabled=false;
+    if(res?.success){
+      const {promoted,graduated,results}=res.data;
+      showToast(`Done! ${promoted} promoted, ${graduated} graduated.`,'success');
+      closePromoteModal();loadYears();
+      alert(`Promotion Results:\n\n${results.map(r=>`${r.from} → ${r.action==='promoted'?r.to:'GRADUATED'} (${r.count})`).join('\n')}`);
+    } else showToast(res?.message||'Promotion failed.','error');
+  }
+
+  loadYears();
+</script>
+</body>
+</html>

@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ASMS — Dashboard</title>
+<link rel="stylesheet" href="assets/css/main.css">
+</head>
+<body>
+
+<!-- ═══════════════════════ SIDEBAR ═══════════════════════ -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-icon">🎓</div>
+    <div class="logo-text">
+      <div class="name">ASMS</div>
+      <span class="sub">አቡጊዳ ትምህርት ቤት</span>
+    </div>
+  </div>
+
+  <nav class="sidebar-nav">
+    <div class="nav-section">Overview</div>
+    <a href="dashboard.html" class="nav-item active">
+      <span class="nav-icon">📊</span> Dashboard
+    </a>
+
+    <div class="nav-section">Academic</div>
+    <a href="students.html" class="nav-item">
+      <span class="nav-icon">👨‍🎓</span> Students
+    </a>
+    <a href="teachers.html" class="nav-item">
+      <span class="nav-icon">👩‍🏫</span> Teachers
+    </a>
+    <a href="attendance.html" class="nav-item">
+      <span class="nav-icon">📅</span> Attendance
+    </a>
+    <a href="grades.html" class="nav-item">
+      <span class="nav-icon">📝</span> Grades & Exams
+    </a>
+    <a href="exam-schedule.html" class="nav-item">
+  <span class="nav-icon">📋</span> Exam Schedule
+</a>
+<a href="academic-years.html" class="nav-item">
+  <span class="nav-icon">🏫</span> Academic Years
+</a>
+
+    <div class="nav-section">Operations</div>
+    <a href="finance.html" class="nav-item">
+      <span class="nav-icon">💰</span> Finance
+    </a>
+
+  </nav>
+
+  <div class="sidebar-footer">
+    <div class="user-card" onclick="logout()">
+      <div class="user-avatar" id="userInitials">AD</div>
+      <div>
+        <div class="user-name" id="userName">Administrator</div>
+        <div class="user-role" id="userRole">Admin</div>
+      </div>
+      <span style="margin-left:auto;color:var(--text3);font-size:11px">↪</span>
+    </div>
+  </div>
+</aside>
+
+<!-- ═══════════════════════ MAIN ═══════════════════════════ -->
+<main class="main">
+  <div class="topbar">
+    <div class="page-title">
+      Dashboard
+      <span class="sub">ዋናው ዳሽቦርድ</span>
+    </div>
+    <div id="schoolName" style="font-size:12px;color:var(--text3)">🏫 Loading...</div>
+    <button class="btn btn-ghost btn-sm" onclick="loadDashboard()">↻ Refresh</button>
+  </div>
+
+  <div class="content">
+
+    <!-- Stats Row -->
+    <div class="stats-row" id="statsRow">
+      <div class="stat-card gold">
+        <div class="stat-icon">👨‍🎓</div>
+        <div class="stat-val" id="totalStudents">—</div>
+        <div class="stat-label">Total Students</div>
+      </div>
+      <div class="stat-card teal">
+        <div class="stat-icon">📅</div>
+        <div class="stat-val" id="todayPresent">—</div>
+        <div class="stat-label">Present Today</div>
+      </div>
+      <div class="stat-card purple">
+        <div class="stat-icon">📝</div>
+        <div class="stat-val" id="totalExams">—</div>
+        <div class="stat-label">Exams This Term</div>
+      </div>
+      <div class="stat-card green">
+        <div class="stat-icon">💰</div>
+        <div class="stat-val" id="feesCollected">—</div>
+        <div class="stat-label">Fees Collected</div>
+      </div>
+    </div>
+
+    <div class="two-col">
+
+      <!-- Recent Students -->
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title">👨‍🎓 Recent Students</div>
+          <a href="students.html" class="btn btn-ghost btn-sm">View All →</a>
+        </div>
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Student</th>
+                <th>ID</th>
+                <th>Class</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="recentStudents">
+              <tr><td colspan="4"><div class="loading-state"><div class="spinner"></div> Loading...</div></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Finance Summary -->
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title">💰 Finance Overview</div>
+          <a href="finance.html" class="btn btn-ghost btn-sm">Details →</a>
+        </div>
+        <div class="panel-body" id="financeSummary">
+          <div class="loading-state"><div class="spinner"></div> Loading...</div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Recent Payments -->
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-title">💳 Recent Payments</div>
+      </div>
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Student</th>
+              <th>Amount</th>
+              <th>Method</th>
+              <th>Date</th>
+              <th>Receipt</th>
+            </tr>
+          </thead>
+          <tbody id="recentPayments">
+            <tr><td colspan="5"><div class="loading-state"><div class="spinner"></div></div></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<script src="assets/js/api.js"></script>
+<script>
+  // ── Auth check ───────────────────────────────────────────
+  requireAuth();
+
+  // ── Load user info into sidebar ──────────────────────────
+  const user = getUser();
+  if (user) {
+    document.getElementById('userName').textContent    = user.email.split('@')[0];
+    document.getElementById('userRole').textContent    = user.role;
+    document.getElementById('userInitials').textContent = user.email[0].toUpperCase();
+  }
+
+  // ── Load all dashboard data ──────────────────────────────
+  async function loadDashboard() {
+    await Promise.all([
+      loadStudentStats(),
+      loadFinanceSummary(),
+    ]);
+  }
+
+  async function loadStudentStats() {
+    const res = await api.get('/students?limit=5');
+    if (!res?.success) return;
+
+    const students = res.data.students;
+    const total    = res.data.pagination.total;
+
+    document.getElementById('totalStudents').textContent = total;
+
+    // Render recent students table
+    const tbody = document.getElementById('recentStudents');
+    if (students.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="4"><div class="empty-state"><div class="empty-icon">👤</div><p>No students yet</p></div></td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = students.map(s => `
+      <tr>
+        <td class="primary">${s.first_name} ${s.last_name}</td>
+        <td style="font-size:11px;color:var(--text3);font-family:'JetBrains Mono'">${s.student_number}</td>
+        <td>${s.class_name || '<span style="color:var(--text3)">No class</span>'}</td>
+        <td>${statusBadge(s.status)}</td>
+      </tr>
+    `).join('');
+  }
+
+  async function loadFinanceSummary() {
+    const res = await api.get('/finance/summary');
+
+    if (!res?.success) {
+      document.getElementById('financeSummary').innerHTML =
+        `<p style="color:var(--text3);font-size:13px">No finance data yet.</p>`;
+      return;
+    }
+
+    const s = res.data.summary;
+
+    document.getElementById('feesCollected').textContent =
+      s.total_collected ? `${Math.round(s.total_collected/1000)}K` : '0';
+
+    document.getElementById('financeSummary').innerHTML = `
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
+        <div style="background:var(--bg3);border-radius:8px;padding:14px;text-align:center">
+          <div style="font-size:18px;font-weight:800;color:var(--green)">${formatETB(s.total_collected || 0)}</div>
+          <div style="font-size:11px;color:var(--text3);margin-top:4px">Collected</div>
+        </div>
+        <div style="background:var(--bg3);border-radius:8px;padding:14px;text-align:center">
+          <div style="font-size:18px;font-weight:800;color:var(--red)">${formatETB(s.total_outstanding || 0)}</div>
+          <div style="font-size:11px;color:var(--text3);margin-top:4px">Outstanding</div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;font-size:12px">
+        <span style="color:var(--text3)">Collection Rate</span>
+        <span style="font-weight:700;color:var(--gold)">${s.collection_rate || 0}%</span>
+      </div>
+      <div style="height:6px;background:var(--bg3);border-radius:3px;margin-top:8px;overflow:hidden">
+        <div style="height:100%;width:${s.collection_rate || 0}%;background:var(--gold);border-radius:3px;transition:width 1s ease"></div>
+      </div>
+    `;
+
+    // Recent payments
+    const payments = res.data.recent || [];
+    const ptbody   = document.getElementById('recentPayments');
+
+    if (payments.length === 0) {
+      ptbody.innerHTML = `<tr><td colspan="5"><div class="empty-state"><div class="empty-icon">💳</div><p>No payments yet</p></div></td></tr>`;
+      return;
+    }
+
+    ptbody.innerHTML = payments.map(p => `
+      <tr>
+        <td class="primary">${p.student_name}</td>
+        <td style="font-family:'JetBrains Mono';font-size:12px;color:var(--green)">${formatETB(p.amount_paid)}</td>
+        <td>${statusBadge(p.payment_method)}</td>
+        <td style="font-size:12px;color:var(--text3)">${formatDate(p.payment_date)}</td>
+        <td style="font-family:'JetBrains Mono';font-size:11px;color:var(--text3)">${p.receipt_number || '—'}</td>
+      </tr>
+    `).join('');
+
+    // Exam count (placeholder)
+    document.getElementById('totalExams').textContent = '—';
+    document.getElementById('todayPresent').textContent = '—';
+  }
+
+  // Load on page ready
+  loadDashboard();
+  document.getElementById('schoolName').textContent = '🏫 Haile Selassie II Preparatory';
+</script>
+</body>
+</html>

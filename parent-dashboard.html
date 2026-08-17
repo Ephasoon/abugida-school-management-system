@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ASMS — Parent Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=Noto+Sans+Ethiopic:wght@400;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  :root{
+    --bg:#07090f;--bg2:#0d1117;--bg3:#131b2e;--card:#111827;
+    --gold:#F5A623;--gold2:#f7c36a;--teal:#38B2AC;--blue:#63B3ED;
+    --purple:#9F7AEA;--red:#FC8181;--green:#68D391;
+    --text:#E2E8F0;--text2:#94A3B8;--text3:#4B5563;
+    --border:rgba(99,179,237,0.1);--border2:rgba(245,166,35,0.2);
+    --radius:14px;--radius-sm:8px;
+  }
+  body{font-family:'Sora',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
+
+  /* TOPBAR */
+  .topbar{background:var(--bg2);border-bottom:1px solid var(--border);
+    padding:14px 20px;display:flex;align-items:center;gap:12px;
+    position:sticky;top:0;z-index:100;}
+  .logo-icon{width:38px;height:38px;background:linear-gradient(135deg,var(--gold),#e8891a);
+    border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;}
+  .logo-name{font-size:14px;font-weight:800;color:var(--gold);}
+  .logo-sub{font-family:'Noto Sans Ethiopic',sans-serif;font-size:10px;color:var(--text3);}
+  .btn-logout{margin-left:auto;background:rgba(252,129,129,0.1);
+    border:1px solid rgba(252,129,129,0.2);color:var(--red);
+    border-radius:var(--radius-sm);padding:6px 14px;
+    font-size:12px;font-weight:600;cursor:pointer;font-family:'Sora';}
+
+  /* CHILD SELECTOR */
+  .child-bar{background:var(--bg2);border-bottom:1px solid var(--border);
+    padding:12px 20px;display:none;}
+  .child-tabs{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;}
+  .child-tabs::-webkit-scrollbar{display:none;}
+  .child-tab{display:flex;align-items:center;gap:8px;padding:8px 14px;
+    border-radius:var(--radius-sm);cursor:pointer;white-space:nowrap;
+    border:1px solid var(--border);background:transparent;
+    color:var(--text2);font-size:13px;font-weight:500;
+    transition:all 0.15s;font-family:'Sora';}
+  .child-tab:hover{border-color:var(--border2);color:var(--text);}
+  .child-tab.active{background:rgba(245,166,35,0.1);border-color:var(--gold);color:var(--gold);}
+  .child-avatar{width:26px;height:26px;border-radius:50%;
+    background:linear-gradient(135deg,var(--purple),var(--blue));
+    display:flex;align-items:center;justify-content:center;
+    font-size:10px;font-weight:800;color:#fff;}
+
+  /* NAV TABS */
+  .nav-tabs{display:flex;gap:0;border-bottom:1px solid var(--border);
+    background:var(--bg2);padding:0 20px;overflow-x:auto;scrollbar-width:none;}
+  .nav-tabs::-webkit-scrollbar{display:none;}
+  .nav-tab{padding:14px 16px;font-size:13px;font-weight:600;cursor:pointer;
+    color:var(--text3);border-bottom:2px solid transparent;
+    white-space:nowrap;transition:all 0.15s;}
+  .nav-tab:hover{color:var(--text2);}
+  .nav-tab.active{color:var(--gold);border-bottom-color:var(--gold);}
+
+  /* CONTENT */
+  .content{padding:20px;max-width:920px;margin:0 auto;}
+  .tab-page{display:none;}
+  .tab-page.active{display:block;animation:fi 0.2s ease;}
+  @keyframes fi{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+  /* CARDS */
+  .stats-row{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:20px;}
+  .stat-card{background:var(--card);border:1px solid var(--border);
+    border-radius:var(--radius);padding:18px;text-align:center;
+    position:relative;overflow:hidden;}
+  .stat-card::after{content:'';position:absolute;top:-20px;right:-20px;
+    width:70px;height:70px;border-radius:50%;filter:blur(25px);opacity:0.35;}
+  .stat-card.gold::after{background:var(--gold);}
+  .stat-card.green::after{background:var(--green);}
+  .stat-card.blue::after{background:var(--blue);}
+  .stat-icon{font-size:20px;margin-bottom:8px;}
+  .stat-val{font-size:26px;font-weight:800;line-height:1;margin-bottom:4px;}
+  .stat-card.gold .stat-val{color:var(--gold);}
+  .stat-card.green .stat-val{color:var(--green);}
+  .stat-card.blue .stat-val{color:var(--blue);}
+  .stat-label{font-size:11px;color:var(--text3);}
+
+  /* PANEL */
+  .panel{background:var(--card);border:1px solid var(--border);
+    border-radius:var(--radius);overflow:hidden;margin-bottom:16px;}
+  .panel-header{padding:14px 18px 12px;border-bottom:1px solid var(--border);
+    display:flex;align-items:center;justify-content:space-between;}
+  .panel-title{font-size:14px;font-weight:700;}
+  .panel-body{padding:18px;}
+  .panel-link{font-size:12px;color:var(--blue);cursor:pointer;}
+  .panel-link:hover{color:var(--gold);}
+
+  /* TABLE */
+  table{width:100%;border-collapse:collapse;font-size:13px;}
+  th{text-align:left;font-size:10px;font-weight:700;
+    letter-spacing:0.8px;text-transform:uppercase;color:var(--text3);
+    padding:0 14px 10px;border-bottom:1px solid var(--border);}
+  td{padding:11px 14px;border-bottom:1px solid rgba(99,179,237,0.05);
+    color:var(--text2);vertical-align:middle;}
+  tr:last-child td{border-bottom:none;}
+  tr:hover td{background:rgba(255,255,255,0.02);}
+  td.primary{color:var(--text);font-weight:600;}
+
+  /* BADGES */
+  .badge{display:inline-flex;align-items:center;padding:3px 9px;
+    border-radius:20px;font-size:11px;font-weight:600;}
+  .bg{background:rgba(104,211,145,0.15);color:var(--green);}
+  .br{background:rgba(252,129,129,0.15);color:var(--red);}
+  .bb{background:rgba(99,179,237,0.15);color:var(--blue);}
+  .bo{background:rgba(245,166,35,0.15);color:var(--gold);}
+
+  /* STUDENT HERO */
+  .hero{background:linear-gradient(135deg,var(--card),var(--bg3));
+    border:1px solid var(--border2);border-radius:var(--radius);
+    padding:22px;margin-bottom:20px;display:flex;align-items:center;gap:18px;}
+  .hero-av{width:66px;height:66px;border-radius:16px;
+    background:linear-gradient(135deg,var(--purple),var(--blue));
+    display:flex;align-items:center;justify-content:center;
+    font-size:26px;font-weight:800;color:#fff;flex-shrink:0;
+    border:2px solid var(--gold);}
+  .hero-name{font-size:19px;font-weight:800;margin-bottom:4px;}
+  .hero-info{font-size:12px;color:var(--text2);line-height:1.9;}
+  .hero-id{font-family:'JetBrains Mono';font-size:11px;color:var(--gold);margin-top:5px;}
+
+  /* SUBJECT BLOCK */
+  .sub-block{background:var(--bg3);border-radius:var(--radius-sm);
+    padding:14px 16px;margin-bottom:10px;border-left:3px solid var(--blue);}
+  .sub-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
+  .sub-name{font-size:14px;font-weight:700;}
+
+  /* TIMETABLE */
+  .tt-day{margin-bottom:14px;}
+  .tt-day-name{font-size:11px;font-weight:700;color:var(--gold);
+    text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;}
+  .tt-slot{display:flex;align-items:center;gap:12px;
+    background:rgba(255,255,255,0.03);border:1px solid var(--border);
+    border-radius:var(--radius-sm);padding:10px 14px;margin-bottom:4px;}
+  .tt-time{font-family:'JetBrains Mono';font-size:11px;color:var(--text3);width:100px;flex-shrink:0;}
+  .tt-subj{font-size:13px;font-weight:600;}
+  .tt-teach{font-size:11px;color:var(--text3);margin-left:auto;}
+
+  /* MONTH BARS */
+  .month-bar{display:flex;align-items:center;gap:10px;margin-bottom:8px;}
+  .month-label{font-size:11px;color:var(--text3);width:70px;flex-shrink:0;}
+  .month-track{flex:1;height:6px;background:var(--bg3);border-radius:3px;overflow:hidden;}
+  .month-fill{height:100%;background:var(--green);border-radius:3px;transition:width 1s ease;}
+  .month-rate{font-size:11px;font-weight:600;color:var(--text2);width:36px;text-align:right;}
+
+  /* FEE */
+  .fee-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:16px;}
+  .fee-box{background:var(--bg3);border-radius:var(--radius-sm);padding:14px;text-align:center;}
+  .fee-amt{font-size:16px;font-weight:800;font-family:'JetBrains Mono';}
+  .fee-lbl{font-size:10px;color:var(--text3);margin-top:4px;}
+
+  /* DOWNLOAD BTN */
+  .btn-dl{display:inline-flex;align-items:center;gap:7px;
+    padding:8px 16px;border-radius:var(--radius-sm);
+    font-size:13px;font-weight:600;cursor:pointer;border:none;
+    font-family:'Sora';background:var(--gold);color:#000;
+    text-decoration:none;transition:all 0.15s;}
+  .btn-dl:hover{background:var(--gold2);transform:translateY(-1px);}
+
+  /* LOADING / EMPTY */
+  .loading{display:flex;align-items:center;justify-content:center;
+    gap:10px;padding:40px;color:var(--text3);font-size:13px;}
+  .spinner{width:20px;height:20px;border:2px solid var(--border);
+    border-top-color:var(--gold);border-radius:50%;
+    animation:spin 0.7s linear infinite;}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .empty{text-align:center;padding:40px;color:var(--text3);font-size:13px;}
+  .empty-icon{font-size:32px;margin-bottom:10px;}
+
+  @media(max-width:600px){
+    .stats-row{grid-template-columns:1fr 1fr;}
+    .fee-row{grid-template-columns:1fr 1fr;}
+    .hero{flex-direction:column;text-align:center;}
+  }
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="logo-icon">🎓</div>
+  <div>
+    <div class="logo-name">ASMS Parent Portal</div>
+    <div class="logo-sub">አቡጊዳ ትምህርት ቤት — የወላጅ ፖርታል</div>
+  </div>
+  <span style="font-size:12px;color:var(--text2);margin-left:12px" id="parentName"></span>
+  <button class="btn-logout" onclick="doLogout()">Sign Out ↪</button>
+</div>
+
+<!-- CHILD SELECTOR -->
+<div class="child-bar" id="childBar">
+  <div style="font-size:10px;color:var(--text3);margin-bottom:7px;
+    font-weight:700;text-transform:uppercase;letter-spacing:0.8px">Your Children</div>
+  <div class="child-tabs" id="childTabs"></div>
+</div>
+
+<!-- NAV TABS -->
+<div class="nav-tabs">
+  <div class="nav-tab active" onclick="showTab('overview')">📊 Overview</div>
+  <div class="nav-tab" onclick="showTab('grades')">📝 Grades</div>
+  <div class="nav-tab" onclick="showTab('attendance')">📅 Attendance</div>
+  <div class="nav-tab" onclick="showTab('fees')">💰 Fees</div>
+  <div class="nav-tab" onclick="showTab('timetable')">🗓️ Timetable</div>
+</div>
+
+<!-- CONTENT -->
+<div class="content">
+
+  <!-- OVERVIEW -->
+  <div class="tab-page active" id="tab-overview">
+    <div id="heroArea" style="margin-top:20px">
+      <div class="loading"><div class="spinner"></div> Loading...</div>
+    </div>
+    <div class="stats-row" id="ovStats" style="display:none">
+      <div class="stat-card gold"><div class="stat-icon">📝</div>
+        <div class="stat-val" id="ov-gpa">—</div><div class="stat-label">GPA</div></div>
+      <div class="stat-card green"><div class="stat-icon">📅</div>
+        <div class="stat-val" id="ov-att">—</div><div class="stat-label">Attendance</div></div>
+      <div class="stat-card blue"><div class="stat-icon">💰</div>
+        <div class="stat-val" id="ov-fee">—</div><div class="stat-label">Fee Status</div></div>
+    </div>
+    <div class="panel" id="recentPanel" style="display:none">
+      <div class="panel-header">
+        <div class="panel-title">📝 Recent Grades</div>
+        <span class="panel-link" onclick="showTab('grades')">View All →</span>
+      </div>
+      <table><thead><tr><th>Subject</th><th>Exam</th><th>Score</th><th>Grade</th></tr></thead>
+        <tbody id="recentGrades"></tbody></table>
+    </div>
+  </div>
+
+  <!-- GRADES -->
+  <div class="tab-page" id="tab-grades">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin:20px 0 16px">
+      <div style="font-size:16px;font-weight:700">Academic Performance</div>
+      <a id="rcLink" href="#" class="btn-dl" target="_blank">📄 Report Card PDF</a>
+    </div>
+    <div id="gradesArea"><div class="loading"><div class="spinner"></div></div></div>
+  </div>
+
+  <!-- ATTENDANCE -->
+  <div class="tab-page" id="tab-attendance">
+    <div style="margin:20px 0 16px;font-size:16px;font-weight:700">Attendance Record</div>
+    <div id="attArea"><div class="loading"><div class="spinner"></div></div></div>
+  </div>
+
+  <!-- FEES -->
+  <div class="tab-page" id="tab-fees">
+    <div style="margin:20px 0 16px;font-size:16px;font-weight:700">Fee Information</div>
+    <div id="feeArea"><div class="loading"><div class="spinner"></div></div></div>
+  </div>
+
+  <!-- TIMETABLE -->
+  <div class="tab-page" id="tab-timetable">
+    <div style="margin:20px 0 16px;font-size:16px;font-weight:700">Class Timetable</div>
+    <div id="ttArea"><div class="loading"><div class="spinner"></div></div></div>
+  </div>
+
+</div>
+
+<script>
+  const API   = 'http://localhost:3000/api';
+  const token = localStorage.getItem('parent_token');
+  const pUser = JSON.parse(localStorage.getItem('parent_user')||'null');
+  if (!token) window.location.href = 'parent-login.html';
+
+  let children    = [];
+  let activeChild = null;
+  let activeTab   = 'overview';
+
+  async function apiFetch(url) {
+    const res = await fetch(`${API}${url}`,{
+      headers:{'Authorization':`Bearer ${token}`},credentials:'include'
+    });
+    if (res.status===401){doLogout();return null;}
+    return res.json();
+  }
+
+  function doLogout(){
+    localStorage.removeItem('parent_token');
+    localStorage.removeItem('parent_user');
+    window.location.href='parent-login.html';
+  }
+
+  function formatETB(n){return `ETB ${parseFloat(n||0).toLocaleString('en-ET',{minimumFractionDigits:2,maximumFractionDigits:2})}`;}
+  function fmtDate(d){if(!d)return'—';return new Date(d).toLocaleDateString('en-ET',{year:'numeric',month:'short',day:'numeric'});}
+  function gradeClass(l){if(!l)return'bb';if(l.startsWith('A'))return'bg';if(l.startsWith('B'))return'bb';if(l.startsWith('C'))return'bo';return'br';}
+  function sBadge(s){const m={paid:'bg',unpaid:'br',partial:'bo',present:'bg',absent:'br',late:'bo'};return`<span class="badge ${m[s]||'bb'}">${s}</span>`;}
+
+  function showTab(tab){
+    activeTab=tab;
+    document.querySelectorAll('.nav-tab').forEach(el=>{
+      el.classList.toggle('active',el.textContent.toLowerCase().includes(tab));
+    });
+    document.querySelectorAll('.tab-page').forEach(p=>p.classList.remove('active'));
+    document.getElementById(`tab-${tab}`).classList.add('active');
+    if(activeChild) loadTab(tab);
+  }
+
+  async function loadTab(tab){
+    if(!activeChild)return;
+    const id=activeChild;
+    switch(tab){
+      case'overview':   await loadOverview(id);   break;
+      case'grades':     await loadGrades(id);     break;
+      case'attendance': await loadAtt(id);        break;
+      case'fees':       await loadFees(id);       break;
+      case'timetable':  await loadTT(id);         break;
+    }
+  }
+
+  async function init(){
+    document.getElementById('parentName').textContent=pUser?.email?.split('@')[0]||'Parent';
+    const res=await apiFetch('/parent/children');
+    if(!res?.success)return;
+    children=res.data;
+    if(children.length===0){
+      document.getElementById('heroArea').innerHTML=
+        `<div class="empty"><div class="empty-icon">👤</div>
+         <p>No children linked to your account.<br>Contact the school to link your child.</p></div>`;
+      return;
+    }
+    if(children.length>1){
+      document.getElementById('childBar').style.display='block';
+      document.getElementById('childTabs').innerHTML=children.map((c,i)=>`
+        <button class="child-tab ${i===0?'active':''}" onclick="selectChild('${c.id}',this)">
+          <div class="child-avatar">${c.first_name[0]}${c.last_name[0]}</div>
+          ${c.first_name} ${c.last_name}
+        </button>`).join('');
+    }
+    selectChild(children[0].id,null);
+  }
+
+  function selectChild(id,btn){
+    activeChild=id;
+    if(btn){document.querySelectorAll('.child-tab').forEach(b=>b.classList.remove('active'));btn.classList.add('active');}
+    document.getElementById('rcLink').href=`${API}/pdf/report-card/${id}`;
+    loadTab(activeTab);
+  }
+
+  async function loadOverview(id){
+    document.getElementById('heroArea').innerHTML=`<div class="loading" style="margin-top:20px"><div class="spinner"></div></div>`;
+    const res=await apiFetch(`/parent/child/${id}/summary`);
+    if(!res?.success)return;
+    const {student:s,attendance:a,recent_grades:rg,fees:f}=res.data;
+
+    document.getElementById('heroArea').innerHTML=`
+      <div class="hero">
+        <div class="hero-av">${s.first_name[0]}${s.last_name[0]}</div>
+        <div>
+          <div class="hero-name">${s.first_name} ${s.last_name}${s.fathers_name?' '+s.fathers_name:''}</div>
+          <div class="hero-info">
+            Class: <strong style="color:var(--text)">${s.class_name||'Not assigned'}</strong><br>
+            Grade: <strong style="color:var(--text)">${s.grade_level||'—'}</strong> &nbsp;|&nbsp;
+            Section: <strong style="color:var(--text)">${s.section||'—'}</strong><br>
+            Year: <strong style="color:var(--text)">${s.academic_year||'2024/2025'}</strong> &nbsp;|&nbsp;
+            Status: ${sBadge(s.status)}
+          </div>
+          <div class="hero-id">${s.student_number}</div>
+        </div>
+      </div>`;
+
+    document.getElementById('ovStats').style.display='grid';
+    document.getElementById('ov-gpa').textContent='—';
+    document.getElementById('ov-att').textContent=`${a?.rate||0}%`;
+    const bal=parseFloat(f?.balance||0);
+    document.getElementById('ov-fee').textContent=bal<=0?'Paid ✅':`${Math.round(bal)} ETB`;
+
+    document.getElementById('recentPanel').style.display='block';
+    document.getElementById('recentGrades').innerHTML=rg?.length>0
+      ?rg.map(g=>`<tr>
+          <td class="primary">${g.subject}</td>
+          <td style="font-size:12px">${g.exam_name||g.exam_type}</td>
+          <td style="font-family:'JetBrains Mono';font-size:12px">${g.score}/${g.max_score}</td>
+          <td><span class="badge ${gradeClass(g.grade_letter)}">${g.grade_letter||'—'}</span></td>
+        </tr>`).join('')
+      :`<tr><td colspan="4"><div class="empty"><p>No grades yet</p></div></td></tr>`;
+
+    // Load GPA separately
+    const gr=await apiFetch(`/parent/child/${id}/grades`);
+    if(gr?.success) document.getElementById('ov-gpa').textContent=gr.data.gpa;
+  }
+
+  async function loadGrades(id){
+    document.getElementById('gradesArea').innerHTML=`<div class="loading"><div class="spinner"></div></div>`;
+    const res=await apiFetch(`/parent/child/${id}/grades`);
+    if(!res?.success){document.getElementById('gradesArea').innerHTML=`<div class="empty"><p>No grades found</p></div>`;return;}
+    const {gpa,by_subject}=res.data;
+    document.getElementById('gradesArea').innerHTML=`
+      <div style="background:linear-gradient(135deg,var(--card),var(--bg3));
+        border:1px solid var(--border2);border-radius:var(--radius);
+        padding:20px;margin-bottom:20px;text-align:center">
+        <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Overall GPA</div>
+        <div style="font-size:42px;font-weight:800;color:var(--gold)">${gpa}</div>
+        <div style="font-size:12px;color:var(--text3);margin-top:4px">
+          ${parseFloat(gpa)>=3.7?'Excellent 🌟':parseFloat(gpa)>=3.0?'Good 👍':parseFloat(gpa)>=2.0?'Average':'Needs Improvement'}
+        </div>
+      </div>
+      ${by_subject?.length>0
+        ?by_subject.map(sub=>`
+            <div class="sub-block">
+              <div class="sub-header">
+                <div class="sub-name">${sub.subject}</div>
+                ${sub.exams?.length>0?`<span class="badge ${gradeClass(sub.exams[0]?.grade_letter)}" style="font-size:13px;padding:4px 12px">
+                  ${sub.exams[0]?.grade_letter||'—'}</span>`:''}
+              </div>
+              <table><thead><tr><th>Exam</th><th>Type</th><th>Term</th><th>Score</th><th>%</th><th>Grade</th></tr></thead>
+              <tbody>${sub.exams?.map(e=>`<tr>
+                <td class="primary">${e.exam_name||'Exam'}</td>
+                <td style="text-transform:capitalize;font-size:12px">${e.exam_type}</td>
+                <td style="font-size:12px;color:var(--text3)">${e.term}</td>
+                <td style="font-family:'JetBrains Mono';font-size:12px">${e.score}/${e.max_score}</td>
+                <td style="font-size:12px">${e.percentage}%</td>
+                <td><span class="badge ${gradeClass(e.grade_letter)}">${e.grade_letter||'—'}</span></td>
+              </tr>`).join('')}</tbody></table>
+            </div>`).join('')
+        :'<div class="empty"><div class="empty-icon">📝</div><p>No grades recorded yet</p></div>'}`;
+  }
+
+  async function loadAtt(id){
+    document.getElementById('attArea').innerHTML=`<div class="loading"><div class="spinner"></div></div>`;
+    const res=await apiFetch(`/parent/child/${id}/attendance`);
+    if(!res?.success)return;
+    const {overall:o,monthly:m,recent:r}=res.data;
+    document.getElementById('attArea').innerHTML=`
+      <div class="stats-row" style="grid-template-columns:repeat(4,1fr)">
+        <div class="stat-card gold"><div class="stat-icon">📊</div>
+          <div class="stat-val">${o?.rate||0}%</div><div class="stat-label">Rate</div></div>
+        <div class="stat-card green"><div class="stat-icon">✅</div>
+          <div class="stat-val">${o?.present||0}</div><div class="stat-label">Present</div></div>
+        <div class="stat-card" style="border-color:rgba(252,129,129,0.2)">
+          <div class="stat-icon">❌</div>
+          <div class="stat-val" style="color:var(--red)">${o?.absent||0}</div>
+          <div class="stat-label">Absent</div></div>
+        <div class="stat-card blue"><div class="stat-icon">⏰</div>
+          <div class="stat-val">${o?.late||0}</div><div class="stat-label">Late</div></div>
+      </div>
+      ${m?.length>0?`<div class="panel"><div class="panel-header"><div class="panel-title">📈 Monthly</div></div>
+        <div class="panel-body">${m.map(mo=>`
+          <div class="month-bar">
+            <div class="month-label">${mo.month}</div>
+            <div class="month-track"><div class="month-fill" style="width:${mo.rate||0}%"></div></div>
+            <div class="month-rate">${mo.rate||0}%</div>
+          </div>`).join('')}</div></div>`:''}
+      ${r?.length>0?`<div class="panel"><div class="panel-header"><div class="panel-title">📋 Recent</div></div>
+        <table><thead><tr><th>Date</th><th>Status</th><th>Note</th></tr></thead>
+        <tbody>${r.map(rec=>`<tr>
+          <td style="font-family:'JetBrains Mono';font-size:12px">${fmtDate(rec.date)}</td>
+          <td>${sBadge(rec.status)}</td>
+          <td style="font-size:12px;color:var(--text3)">${rec.note||'—'}</td>
+        </tr>`).join('')}</tbody></table></div>`
+      :'<div class="empty"><div class="empty-icon">📅</div><p>No attendance records yet</p></div>'}`;
+  }
+
+  async function loadFees(id){
+    document.getElementById('feeArea').innerHTML=`<div class="loading"><div class="spinner"></div></div>`;
+    const res=await apiFetch(`/parent/child/${id}/fees`);
+    if(!res?.success)return;
+    const {overview:o,payments:p}=res.data;
+    document.getElementById('feeArea').innerHTML=`
+      <div class="fee-row">
+        <div class="fee-box"><div class="fee-amt">${formatETB(o.total_due)}</div><div class="fee-lbl">Total Due</div></div>
+        <div class="fee-box"><div class="fee-amt" style="color:var(--green)">${formatETB(o.total_paid)}</div><div class="fee-lbl">Total Paid</div></div>
+        <div class="fee-box">
+          <div class="fee-amt" style="color:${o.balance<=0?'var(--green)':'var(--red)'}">${formatETB(o.balance)}</div>
+          <div class="fee-lbl">Balance</div>
+        </div>
+      </div>
+      <div style="text-align:center;margin-bottom:16px">
+        ${sBadge(o.status)}
+        <p style="font-size:12px;color:${o.balance>0?'var(--red)':'var(--green)'};margin-top:8px">
+          ${o.balance>0?'Please pay the outstanding balance at school or via CBE Birr / Telebirr.':'All fees are paid. Thank you! ✅'}
+        </p>
+      </div>
+      ${p?.length>0?`<div class="panel"><div class="panel-header"><div class="panel-title">💳 Payment History</div></div>
+        <table><thead><tr><th>Term</th><th>Category</th><th>Due</th><th>Paid</th><th>Method</th><th>Date</th><th>Receipt</th></tr></thead>
+        <tbody>${p.map(pay=>`<tr>
+          <td style="font-size:12px">${pay.term}</td>
+          <td style="text-transform:capitalize;font-size:12px">${pay.category}</td>
+          <td style="font-family:'JetBrains Mono';font-size:12px">${formatETB(pay.amount_due)}</td>
+          <td style="font-family:'JetBrains Mono';font-size:12px;color:var(--green)">${formatETB(pay.amount_paid)}</td>
+          <td style="font-size:12px;text-transform:capitalize">${(pay.payment_method||'').replace('_',' ')}</td>
+          <td style="font-size:12px;color:var(--text3)">${fmtDate(pay.payment_date)}</td>
+          <td style="font-family:'JetBrains Mono';font-size:10px;color:var(--text3)">${pay.receipt_number||'—'}</td>
+        </tr>`).join('')}</tbody></table></div>`
+      :'<div class="empty"><div class="empty-icon">💳</div><p>No payment records yet</p></div>'}`;
+  }
+
+  async function loadTT(id){
+    document.getElementById('ttArea').innerHTML=`<div class="loading"><div class="spinner"></div></div>`;
+    const res=await apiFetch(`/parent/child/${id}/timetable`);
+    if(!res?.success||!res.data?.by_day){
+      document.getElementById('ttArea').innerHTML=`<div class="empty"><div class="empty-icon">🗓️</div><p>No timetable set yet</p></div>`;return;
+    }
+    const {by_day}=res.data;
+    const days=['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+    const html=days.map(day=>{
+      const slots=by_day[day]||[];
+      if(!slots.length)return'';
+      return`<div class="tt-day">
+        <div class="tt-day-name">${day}</div>
+        ${slots.map(s=>`<div class="tt-slot">
+          <div class="tt-time">${(s.start_time||'').substring(0,5)} – ${(s.end_time||'').substring(0,5)}</div>
+          <div><div class="tt-subj">${s.subject||'—'}</div>
+            ${s.room?`<div style="font-size:10px;color:var(--gold)">📍 ${s.room}</div>`:''}
+          </div>
+          <div class="tt-teach">${s.teacher||'No teacher'}</div>
+        </div>`).join('')}
+      </div>`;
+    }).join('');
+    document.getElementById('ttArea').innerHTML=html||`<div class="empty"><div class="empty-icon">🗓️</div><p>No timetable yet</p></div>`;
+  }
+
+  init();
+</script>
+</body>
+</html>

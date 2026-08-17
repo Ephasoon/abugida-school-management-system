@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ASMS — Document Store</title>
+<link rel="stylesheet" href="assets/css/main.css">
+<style>
+  .cat-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+  .cat-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+    cursor: pointer;
+    transition: all 0.15s;
+    text-align: center;
+  }
+  .cat-card:hover { border-color: var(--border2); transform: translateY(-2px); }
+  .cat-card.active { border-color: var(--gold); background: rgba(245,166,35,0.08); }
+  .cat-icon { font-size: 26px; margin-bottom: 8px; }
+  .cat-name { font-size: 12px; font-weight: 700; margin-bottom: 3px; }
+  .cat-count { font-size: 11px; color: var(--text3); }
+
+  .doc-card {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 14px 16px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 8px;
+    transition: border-color 0.15s;
+  }
+  .doc-card:hover { border-color: var(--border2); }
+  .doc-icon {
+    width: 42px; height: 42px;
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px; flex-shrink: 0;
+  }
+  .doc-icon.pdf     { background: rgba(252,129,129,0.15); }
+  .doc-icon.image   { background: rgba(104,211,145,0.15); }
+  .doc-icon.word    { background: rgba(99,179,237,0.15); }
+  .doc-icon.excel   { background: rgba(104,211,145,0.15); }
+  .doc-icon.other   { background: rgba(159,122,234,0.15); }
+  .doc-info { flex: 1; min-width: 0; }
+  .doc-title { font-size: 14px; font-weight: 700; margin-bottom: 3px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .doc-meta { font-size: 11px; color: var(--text3); }
+  .doc-actions { display: flex; gap: 6px; flex-shrink: 0; }
+
+  .upload-zone {
+    border: 2px dashed var(--border);
+    border-radius: var(--radius);
+    padding: 40px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-bottom: 16px;
+  }
+  .upload-zone:hover { border-color: var(--gold); background: rgba(245,166,35,0.04); }
+  .upload-zone.drag-over { border-color: var(--gold); background: rgba(245,166,35,0.08); }
+  .upload-icon { font-size: 36px; margin-bottom: 10px; }
+  .upload-text { font-size: 14px; font-weight: 600; color: var(--text2); margin-bottom: 4px; }
+  .upload-sub { font-size: 12px; color: var(--text3); }
+
+  .size-badge {
+    font-family: 'JetBrains Mono';
+    font-size: 10px;
+    color: var(--text3);
+    background: var(--bg3);
+    padding: 2px 7px;
+    border-radius: 4px;
+  }
+</style>
+</head>
+<body>
+
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-icon">🎓</div>
+    <div class="logo-text"><div class="name">ASMS</div><span class="sub">አቡጊዳ ትምህርት ቤት</span></div>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-section">Overview</div>
+    <a href="dashboard.html" class="nav-item"><span class="nav-icon">📊</span> Dashboard</a>
+    <a href="analytics.html" class="nav-item"><span class="nav-icon">📈</span> Analytics</a>
+    <div class="nav-section">Academic</div>
+    <a href="students.html" class="nav-item"><span class="nav-icon">👨‍🎓</span> Students</a>
+    <a href="teachers.html" class="nav-item"><span class="nav-icon">👩‍🏫</span> Teachers</a>
+    <a href="attendance.html" class="nav-item"><span class="nav-icon">📅</span> Attendance</a>
+    <a href="grades.html" class="nav-item"><span class="nav-icon">📝</span> Grades & Exams</a>
+    <a href="timetable.html" class="nav-item"><span class="nav-icon">🗓️</span> Timetable</a>
+    <a href="exam-schedule.html" class="nav-item"><span class="nav-icon">📋</span> Exam Schedule</a>
+    <a href="academic-years.html" class="nav-item"><span class="nav-icon">🏫</span> Academic Years</a>
+    <div class="nav-section">Operations</div>
+    <a href="finance.html" class="nav-item"><span class="nav-icon">💰</span> Finance</a>
+    <a href="documents.html" class="nav-item active"><span class="nav-icon">📁</span> Documents</a>
+  </nav>
+  <div class="sidebar-footer">
+    <div class="user-card" onclick="logout()">
+      <div class="user-avatar" id="userInitials">AD</div>
+      <div><div class="user-name" id="userName">Administrator</div>
+        <div class="user-role" id="userRole">Admin</div></div>
+      <span style="margin-left:auto;color:var(--text3);font-size:11px">↪</span>
+    </div>
+  </div>
+</aside>
+
+<main class="main">
+  <div class="topbar">
+    <div class="page-title">Document Store<span class="sub">የሰነድ ማከማቻ</span></div>
+    <button class="btn btn-primary" onclick="openUploadModal()">+ Upload Document</button>
+  </div>
+
+  <div class="content">
+
+    <!-- Category Cards -->
+    <div class="cat-grid" id="catGrid">
+      <div class="loading-state" style="grid-column:1/-1"><div class="spinner"></div></div>
+    </div>
+
+    <!-- Search + Filter -->
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-title">📁 All Documents</div>
+        <div style="display:flex;gap:10px;align-items:center">
+          <div class="search-bar" style="width:220px;margin:0">
+            <span>🔍</span>
+            <input type="text" id="searchInput" placeholder="Search documents..."
+              oninput="debounce()">
+          </div>
+          <select class="form-control" id="catFilter" style="width:150px;padding:6px 10px;font-size:12px"
+            onchange="loadDocuments()">
+            <option value="">All Categories</option>
+            <option value="id_document">🪪 ID Document</option>
+            <option value="birth_certificate">📋 Birth Certificate</option>
+            <option value="transcript">📄 Transcript</option>
+            <option value="medical">🏥 Medical</option>
+            <option value="photo">📷 Photo</option>
+            <option value="letter">✉️ Letter</option>
+            <option value="certificate">🏆 Certificate</option>
+            <option value="report">📊 Report</option>
+            <option value="other">📁 Other</option>
+          </select>
+        </div>
+      </div>
+
+      <div id="docList" style="padding:16px">
+        <div class="loading-state"><div class="spinner"></div></div>
+      </div>
+
+      <!-- Pagination -->
+      <div id="pagination" style="display:flex;align-items:center;justify-content:space-between;
+        padding:12px 16px;border-top:1px solid var(--border)">
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<!-- ═══ UPLOAD MODAL ═══ -->
+<div class="modal-overlay" id="uploadModal">
+  <div class="modal" style="max-width:520px">
+    <div class="modal-title">📁 Upload Document
+      <button class="modal-close" onclick="closeUploadModal()">✕</button>
+    </div>
+
+    <!-- Drop Zone -->
+    <div class="upload-zone" id="dropZone"
+      onclick="document.getElementById('fileInput').click()"
+      ondragover="handleDragOver(event)"
+      ondragleave="handleDragLeave(event)"
+      ondrop="handleDrop(event)">
+      <div class="upload-icon">📂</div>
+      <div class="upload-text" id="dropText">Click to choose file or drag & drop</div>
+      <div class="upload-sub">PDF, JPG, PNG, DOC, DOCX, XLS, XLSX — Max 10MB</div>
+    </div>
+    <input type="file" id="fileInput" style="display:none"
+      accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx"
+      onchange="handleFileSelect(event)">
+
+    <div class="form-grid">
+      <div class="form-group form-full">
+        <label class="form-label">Document Title *</label>
+        <input class="form-control" type="text" id="up_title"
+          placeholder="e.g. Dawit Tadesse — Birth Certificate">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Category *</label>
+        <select class="form-control" id="up_category">
+          <option value="">Select category...</option>
+          <option value="id_document">🪪 ID Document</option>
+          <option value="birth_certificate">📋 Birth Certificate</option>
+          <option value="transcript">📄 Transcript</option>
+          <option value="medical">🏥 Medical Record</option>
+          <option value="photo">📷 Photo</option>
+          <option value="letter">✉️ Letter</option>
+          <option value="certificate">🏆 Certificate</option>
+          <option value="report">📊 Report</option>
+          <option value="other">📁 Other</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Privacy</label>
+        <select class="form-control" id="up_private">
+          <option value="true">🔒 Private</option>
+          <option value="false">🌐 Shared</option>
+        </select>
+      </div>
+      <div class="form-group form-full">
+        <label class="form-label">Student ID (optional)</label>
+        <input class="form-control" type="text" id="up_student"
+          placeholder="Paste student UUID to link this document">
+      </div>
+      <div class="form-group form-full">
+        <label class="form-label">Description (optional)</label>
+        <input class="form-control" type="text" id="up_desc"
+          placeholder="Brief description of the document">
+      </div>
+    </div>
+
+    <!-- Upload Progress -->
+    <div id="uploadProgress" style="display:none;margin-top:12px">
+      <div style="height:4px;background:var(--bg3);border-radius:2px;overflow:hidden">
+        <div id="progressBar" style="height:100%;background:var(--gold);border-radius:2px;
+          width:0%;transition:width 0.3s ease"></div>
+      </div>
+      <div style="font-size:11px;color:var(--text3);margin-top:6px;text-align:center"
+        id="progressText">Uploading...</div>
+    </div>
+
+    <div style="display:flex;gap:10px;margin-top:20px;justify-content:flex-end">
+      <button class="btn btn-ghost" onclick="closeUploadModal()">Cancel</button>
+      <button class="btn btn-primary" id="uploadBtn" onclick="doUpload()">📤 Upload</button>
+    </div>
+  </div>
+</div>
+
+<script src="assets/js/api.js"></script>
+<script>
+  requireAuth();
+  const user = getUser();
+  if (user) {
+    document.getElementById('userName').textContent     = user.email.split('@')[0];
+    document.getElementById('userRole').textContent     = user.role;
+    document.getElementById('userInitials').textContent = user.email[0].toUpperCase();
+  }
+
+  const CATS = {
+    id_document:       { label:'ID Document',       icon:'🪪' },
+    birth_certificate: { label:'Birth Certificate', icon:'📋' },
+    transcript:        { label:'Transcript',        icon:'📄' },
+    medical:           { label:'Medical Record',    icon:'🏥' },
+    photo:             { label:'Photo',             icon:'📷' },
+    letter:            { label:'Letter',            icon:'✉️' },
+    certificate:       { label:'Certificate',       icon:'🏆' },
+    report:            { label:'Report',            icon:'📊' },
+    other:             { label:'Other',             icon:'📁' },
+  };
+
+  let selectedFile  = null;
+  let currentPage   = 1;
+  let searchTimer   = null;
+  let activeCategory = '';
+
+  // ── Init ────────────────────────────────────────────────
+  async function init() {
+    await loadCategories();
+    await loadDocuments();
+  }
+
+  // ── Categories ──────────────────────────────────────────
+  async function loadCategories() {
+    const res = await api.get('/documents/categories');
+    if (!res?.success) return;
+
+    document.getElementById('catGrid').innerHTML = [
+      { key:'all', label:'All Documents', icon:'📂',
+        count: res.data.reduce((s,c)=>s+parseInt(c.count||0),0) },
+      ...res.data
+    ].map(c => `
+      <div class="cat-card ${c.key==='all'&&!activeCategory?'active':c.key===activeCategory?'active':''}"
+        onclick="filterByCategory('${c.key==='all'?'':c.key}')">
+        <div class="cat-icon">${c.icon||'📁'}</div>
+        <div class="cat-name">${c.label}</div>
+        <div class="cat-count">${c.count||0} file${c.count!==1?'s':''}</div>
+      </div>`).join('');
+  }
+
+  function filterByCategory(cat) {
+    activeCategory = cat;
+    document.getElementById('catFilter').value = cat;
+    document.querySelectorAll('.cat-card').forEach(el => el.classList.remove('active'));
+    loadCategories();
+    currentPage = 1;
+    loadDocuments();
+  }
+
+  // ── Documents ───────────────────────────────────────────
+  async function loadDocuments() {
+    const search = document.getElementById('searchInput').value.trim();
+    const cat    = document.getElementById('catFilter').value || activeCategory;
+
+    let url = `/documents?page=${currentPage}&limit=15`;
+    if (search) url += `&search=${encodeURIComponent(search)}`;
+    if (cat)    url += `&category=${cat}`;
+
+    document.getElementById('docList').innerHTML =
+      `<div class="loading-state"><div class="spinner"></div></div>`;
+
+    const res = await api.get(url);
+    if (!res?.success) {
+      document.getElementById('docList').innerHTML =
+        `<div class="empty-state"><p>Failed to load documents</p></div>`;
+      return;
+    }
+
+    const { documents: docs, pagination: pg } = res.data;
+
+    document.getElementById('docList').innerHTML = docs.length
+      ? docs.map(d => `
+          <div class="doc-card">
+            <div class="doc-icon ${fileTypeClass(d.mime_type)}">${fileIcon(d.mime_type)}</div>
+            <div class="doc-info">
+              <div class="doc-title">${d.title}</div>
+              <div class="doc-meta">
+                ${CATS[d.category]?.icon||'📁'} ${CATS[d.category]?.label||d.category}
+                &nbsp;·&nbsp;
+                ${d.student_name ? `👤 ${d.student_name}` : 'No student linked'}
+                &nbsp;·&nbsp;
+                <span class="size-badge">${formatSize(d.file_size)}</span>
+                &nbsp;·&nbsp;
+                ${formatDate(d.created_at)}
+              </div>
+              ${d.description ? `<div style="font-size:11px;color:var(--text3);margin-top:3px">${d.description}</div>` : ''}
+            </div>
+            <div class="doc-actions">
+              <a href="http://localhost:3000/api/documents/download/${d.id}"
+                class="btn btn-ghost btn-sm"
+                target="_blank"
+                onclick="trackDownload('${d.id}')">⬇ Download</a>
+              <button class="btn btn-danger btn-sm"
+                onclick="deleteDoc('${d.id}','${d.title.replace(/'/g,"\\'")}')">✕</button>
+            </div>
+          </div>`).join('')
+      : `<div class="empty-state"><div class="empty-icon">📁</div>
+          <p>No documents found. Upload one using the button above.</p></div>`;
+
+    // Pagination
+    document.getElementById('pagination').innerHTML = pg.total > 0 ? `
+      <span style="font-size:12px;color:var(--text3)">
+        Showing ${((pg.page-1)*pg.limit)+1}–${Math.min(pg.page*pg.limit,pg.total)} of ${pg.total}
+      </span>
+      <div style="display:flex;gap:6px">
+        <button class="btn btn-ghost btn-sm" onclick="changePage(-1)"
+          ${pg.page<=1?'disabled style="opacity:0.4"':''}>← Prev</button>
+        <span style="font-size:12px;color:var(--text2);padding:6px 10px">
+          ${pg.page} / ${pg.totalPages}
+        </span>
+        <button class="btn btn-ghost btn-sm" onclick="changePage(1)"
+          ${pg.page>=pg.totalPages?'disabled style="opacity:0.4"':''}>Next →</button>
+      </div>` : '';
+  }
+
+  function changePage(dir) {
+    currentPage += dir;
+    if (currentPage < 1) currentPage = 1;
+    loadDocuments();
+  }
+
+  function debounce() {
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(() => { currentPage=1; loadDocuments(); }, 400);
+  }
+
+  // ── File helpers ────────────────────────────────────────
+  function fileTypeClass(mime) {
+    if (!mime) return 'other';
+    if (mime.includes('pdf'))   return 'pdf';
+    if (mime.includes('image')) return 'image';
+    if (mime.includes('word') || mime.includes('document')) return 'word';
+    if (mime.includes('excel') || mime.includes('sheet'))   return 'excel';
+    return 'other';
+  }
+
+  function fileIcon(mime) {
+    if (!mime) return '📁';
+    if (mime.includes('pdf'))   return '📄';
+    if (mime.includes('image')) return '🖼️';
+    if (mime.includes('word') || mime.includes('document')) return '📝';
+    if (mime.includes('excel') || mime.includes('sheet'))   return '📊';
+    return '📁';
+  }
+
+  function formatSize(bytes) {
+    if (!bytes) return '0 B';
+    const b = parseInt(bytes);
+    if (b >= 1048576) return `${(b/1048576).toFixed(1)} MB`;
+    if (b >= 1024)    return `${(b/1024).toFixed(0)} KB`;
+    return `${b} B`;
+  }
+
+  function formatDate(d) {
+    if (!d) return '—';
+    return new Date(d).toLocaleDateString('en-ET',{year:'numeric',month:'short',day:'numeric'});
+  }
+
+  function trackDownload(id) {
+    // Track download — update count via GET download endpoint
+  }
+
+  // ── Delete ──────────────────────────────────────────────
+  async function deleteDoc(id, title) {
+    if (!confirm(`Delete "${title}"?\n\nThis will permanently remove the file.`)) return;
+    const res = await api.delete(`/documents/${id}`);
+    if (res?.success) {
+      showToast(`"${title}" deleted.`, 'success');
+      loadDocuments();
+      loadCategories();
+    } else {
+      showToast(res?.message || 'Failed to delete.', 'error');
+    }
+  }
+
+  // ── Upload Modal ────────────────────────────────────────
+  function openUploadModal() {
+    document.getElementById('uploadModal').classList.add('open');
+  }
+  function closeUploadModal() {
+    document.getElementById('uploadModal').classList.remove('open');
+    selectedFile = null;
+    document.getElementById('fileInput').value = '';
+    document.getElementById('dropText').textContent = 'Click to choose file or drag & drop';
+    document.getElementById('dropZone').style.borderColor = '';
+    document.getElementById('uploadProgress').style.display = 'none';
+    document.getElementById('progressBar').style.width = '0%';
+    ['up_title','up_desc','up_student'].forEach(id => {
+      document.getElementById(id).value = '';
+    });
+    document.getElementById('up_category').value = '';
+  }
+
+  function handleFileSelect(e) {
+    const file = e.target.files[0];
+    if (file) setFile(file);
+  }
+
+  function handleDragOver(e) {
+    e.preventDefault();
+    document.getElementById('dropZone').classList.add('drag-over');
+  }
+  function handleDragLeave(e) {
+    document.getElementById('dropZone').classList.remove('drag-over');
+  }
+  function handleDrop(e) {
+    e.preventDefault();
+    document.getElementById('dropZone').classList.remove('drag-over');
+    const file = e.dataTransfer.files[0];
+    if (file) setFile(file);
+  }
+
+  function setFile(file) {
+    selectedFile = file;
+    document.getElementById('dropText').textContent =
+      `✅ ${file.name} (${formatSize(file.size)})`;
+    document.getElementById('dropZone').style.borderColor = 'var(--gold)';
+    // Auto-fill title from filename
+    if (!document.getElementById('up_title').value) {
+      document.getElementById('up_title').value =
+        file.name.replace(/\.[^/.]+$/, '').replace(/[-_]/g,' ');
+    }
+  }
+
+  async function doUpload() {
+    const title    = document.getElementById('up_title').value.trim();
+    const category = document.getElementById('up_category').value;
+    const student  = document.getElementById('up_student').value.trim();
+    const desc     = document.getElementById('up_desc').value.trim();
+    const priv     = document.getElementById('up_private').value;
+
+    if (!selectedFile) { showToast('Please select a file.', 'error'); return; }
+    if (!title)        { showToast('Title is required.', 'error'); return; }
+    if (!category)     { showToast('Category is required.', 'error'); return; }
+
+    const btn = document.getElementById('uploadBtn');
+    btn.textContent = 'Uploading...'; btn.disabled = true;
+    document.getElementById('uploadProgress').style.display = 'block';
+
+    // Animate progress bar
+    let prog = 0;
+    const interval = setInterval(() => {
+      prog = Math.min(prog + 10, 85);
+      document.getElementById('progressBar').style.width = `${prog}%`;
+    }, 200);
+
+    try {
+      const formData = new FormData();
+      formData.append('file',       selectedFile);
+      formData.append('title',      title);
+      formData.append('category',   category);
+      formData.append('is_private', priv);
+      if (student) formData.append('student_id', student);
+      if (desc)    formData.append('description', desc);
+
+      const token = localStorage.getItem('asms_token');
+      const res   = await fetch('http://localhost:3000/api/documents/upload', {
+        method:      'POST',
+        headers:     { 'Authorization': `Bearer ${token}` },
+        credentials: 'include',
+        body:        formData,
+      });
+      const data = await res.json();
+
+      clearInterval(interval);
+      document.getElementById('progressBar').style.width = '100%';
+      document.getElementById('progressText').textContent = 'Done!';
+
+      if (data.success) {
+        showToast(`"${title}" uploaded successfully!`, 'success');
+        closeUploadModal();
+        loadDocuments();
+        loadCategories();
+      } else {
+        showToast(data.message || 'Upload failed.', 'error');
+      }
+    } catch (err) {
+      clearInterval(interval);
+      showToast('Upload failed. Check server connection.', 'error');
+    }
+
+    btn.textContent = '📤 Upload'; btn.disabled = false;
+  }
+
+  init();
+</script>
+</body>
+</html>

@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ASMS — Parent Portal</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=Noto+Sans+Ethiopic:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  :root{
+    --bg:#07090f;--card:#111827;--gold:#F5A623;--gold2:#f7c36a;
+    --green:#68D391;--blue:#63B3ED;--red:#FC8181;
+    --text:#E2E8F0;--text2:#94A3B8;--text3:#4B5563;
+    --border:rgba(245,166,35,0.15);
+  }
+  body{font-family:'Sora',sans-serif;background:var(--bg);color:var(--text);
+    min-height:100vh;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;padding:20px;}
+  .bg-glow{position:fixed;inset:0;pointer-events:none;
+    background:radial-gradient(ellipse at 30% 20%,rgba(245,166,35,0.07) 0%,transparent 60%),
+               radial-gradient(ellipse at 70% 80%,rgba(99,179,237,0.05) 0%,transparent 60%);}
+  .wrap{position:relative;z-index:1;width:100%;max-width:400px;animation:up 0.5s ease;}
+  @keyframes up{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:none}}
+  .logo{text-align:center;margin-bottom:32px;}
+  .logo-icon{width:64px;height:64px;background:linear-gradient(135deg,var(--gold),#e8891a);
+    border-radius:18px;display:inline-flex;align-items:center;justify-content:center;
+    font-size:30px;margin-bottom:14px;box-shadow:0 8px 30px rgba(245,166,35,0.35);
+    animation:pulse 3s ease-in-out infinite;}
+  @keyframes pulse{0%,100%{box-shadow:0 8px 30px rgba(245,166,35,0.35)}
+    50%{box-shadow:0 8px 50px rgba(245,166,35,0.55)}}
+  .logo-title{font-size:22px;font-weight:800;
+    background:linear-gradient(90deg,var(--gold),var(--gold2));
+    -webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+  .logo-sub{font-family:'Noto Sans Ethiopic',sans-serif;font-size:12px;
+    color:var(--text3);display:block;margin-top:4px;}
+  .logo-desc{font-size:13px;color:var(--text2);margin-top:8px;}
+  .card{background:var(--card);border:1px solid var(--border);
+    border-radius:20px;padding:36px;box-shadow:0 20px 60px rgba(0,0,0,0.5);}
+  .info-box{background:rgba(245,166,35,0.08);border:1px solid rgba(245,166,35,0.2);
+    border-radius:10px;padding:14px 16px;margin-bottom:20px;
+    font-size:12px;color:var(--text2);line-height:1.7;}
+  .form-group{margin-bottom:16px;}
+  .form-label{display:block;font-size:11px;font-weight:600;color:var(--text3);
+    text-transform:uppercase;letter-spacing:0.8px;margin-bottom:7px;}
+  .form-input{width:100%;background:rgba(255,255,255,0.04);
+    border:1px solid rgba(255,255,255,0.08);border-radius:10px;
+    padding:12px 16px;color:var(--text);font-size:14px;
+    font-family:'Sora';outline:none;transition:all 0.2s;}
+  .form-input:focus{border-color:var(--gold);background:rgba(245,166,35,0.05);}
+  .form-input::placeholder{color:var(--text3);}
+  .btn-login{width:100%;padding:14px;
+    background:linear-gradient(135deg,var(--gold),#e8891a);
+    border:none;border-radius:10px;color:#000;font-size:15px;font-weight:700;
+    cursor:pointer;font-family:'Sora';transition:all 0.2s;margin-top:4px;}
+  .btn-login:hover{transform:translateY(-2px);box-shadow:0 8px 25px rgba(245,166,35,0.4);}
+  .error{display:none;background:rgba(252,129,129,0.1);
+    border:1px solid rgba(252,129,129,0.3);border-radius:8px;
+    padding:10px 14px;font-size:13px;color:var(--red);
+    margin-bottom:14px;text-align:center;}
+  .error.show{display:block;}
+  .footer{text-align:center;font-size:11px;color:var(--text3);margin-top:20px;line-height:1.8;}
+  .admin-link{color:var(--blue);text-decoration:none;}
+  .admin-link:hover{color:var(--gold);}
+</style>
+</head>
+<body>
+<div class="bg-glow"></div>
+<div class="wrap">
+  <div class="logo">
+    <div class="logo-icon">👨‍👩‍👧</div>
+    <div class="logo-title">Parent Portal</div>
+    <span class="logo-sub">የወላጅ መረጃ ፖርታል</span>
+    <div class="logo-desc">Äbugida School Management System</div>
+  </div>
+  <div class="card">
+    <div class="info-box">
+      👋 Welcome! Log in with the email and password provided by the school to view your child's grades, attendance, fees and timetable.
+    </div>
+    <div class="error" id="errorMsg"></div>
+    <div class="form-group">
+      <label class="form-label">Email Address</label>
+      <input class="form-input" type="email" id="email" placeholder="parent@email.com" autocomplete="email">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Password</label>
+      <input class="form-input" type="password" id="password" placeholder="••••••••" autocomplete="current-password">
+    </div>
+    <button class="btn-login" id="loginBtn" onclick="handleLogin()">
+      Sign In to Parent Portal
+    </button>
+  </div>
+  <div class="footer">
+    School staff? <a href="login.html" class="admin-link">Go to Admin Portal →</a><br>
+    © 2026 Äbugida School Management System
+  </div>
+</div>
+<script>
+  const API = 'http://localhost:3000/api';
+  document.addEventListener('keydown', e => { if(e.key==='Enter') handleLogin(); });
+  if (localStorage.getItem('parent_token')) window.location.href = 'parent-dashboard.html';
+
+  async function handleLogin() {
+    const email    = document.getElementById('email').value.trim();
+    const password = document.getElementById('password').value;
+    const btn      = document.getElementById('loginBtn');
+    const errEl    = document.getElementById('errorMsg');
+    errEl.classList.remove('show');
+    if (!email || !password) {
+      errEl.textContent = 'Please enter your email and password.';
+      errEl.classList.add('show'); return;
+    }
+    btn.textContent = 'Signing in...'; btn.disabled = true;
+    try {
+      const res  = await fetch(`${API}/auth/login`, {
+        method:'POST', credentials:'include',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ email, password }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        localStorage.setItem('parent_token', data.data.accessToken);
+        localStorage.setItem('parent_user',  JSON.stringify(data.data.user));
+        window.location.href = 'parent-dashboard.html';
+      } else {
+        errEl.textContent = data.message || 'Invalid email or password.';
+        errEl.classList.add('show');
+      }
+    } catch(err) {
+      errEl.textContent = 'Cannot connect to server. Make sure the backend is running.';
+      errEl.classList.add('show');
+    }
+    btn.textContent = 'Sign In to Parent Portal'; btn.disabled = false;
+  }
+</script>
+</body>
+</html>

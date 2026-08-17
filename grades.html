@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ASMS — Grades & Exams</title>
+<link rel="stylesheet" href="assets/css/main.css">
+</head>
+<body>
+
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-icon">🎓</div>
+    <div class="logo-text">
+      <div class="name">ASMS</div>
+      <span class="sub">አቡጊዳ ትምህርት ቤት</span>
+    </div>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-section">Overview</div>
+    <a href="dashboard.html" class="nav-item"><span class="nav-icon">📊</span> Dashboard</a>
+    <div class="nav-section">Academic</div>
+    <a href="students.html" class="nav-item"><span class="nav-icon">👨‍🎓</span> Students</a>
+    <a href="teachers.html" class="nav-item"><span class="nav-icon">👩‍🏫</span> Teachers</a>
+    <a href="attendance.html" class="nav-item"><span class="nav-icon">📅</span> Attendance</a>
+    <a href="grades.html" class="nav-item active"><span class="nav-icon">📝</span> Grades & Exams</a>
+    <div class="nav-section">Operations</div>
+    <a href="finance.html" class="nav-item"><span class="nav-icon">💰</span> Finance</a>
+  </nav>
+  <div class="sidebar-footer">
+    <div class="user-card" onclick="logout()">
+      <div class="user-avatar" id="userInitials">AD</div>
+      <div>
+        <div class="user-name" id="userName">Administrator</div>
+        <div class="user-role" id="userRole">Admin</div>
+      </div>
+      <span style="margin-left:auto;color:var(--text3);font-size:11px">↪</span>
+    </div>
+  </div>
+</aside>
+
+<main class="main">
+  <div class="topbar">
+    <div class="page-title">
+      Grades & Exams
+      <span class="sub">ውጤቶችና ፈተናዎች</span>
+    </div>
+    <button class="btn btn-primary" onclick="openExamModal()">+ Create Exam</button>
+  </div>
+
+  <div class="content">
+
+    <div class="two-col">
+
+      <!-- Exams List -->
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title">📋 Exams</div>
+          <select class="form-control" style="width:120px;padding:4px 8px;font-size:12px"
+            id="termFilter" onchange="loadExams()">
+            <option value="">All Terms</option>
+            <option value="term1">Term 1</option>
+            <option value="term2">Term 2</option>
+            <option value="term3">Term 3</option>
+          </select>
+        </div>
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Exam Name</th>
+                <th>Subject</th>
+                <th>Type</th>
+                <th>Term</th>
+                <th>Max</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="examsBody">
+              <tr><td colspan="6">
+                <div class="loading-state"><div class="spinner"></div></div>
+              </td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Report Card Lookup -->
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title">📄 Report Card</div>
+        </div>
+        <div class="panel-body">
+          <div class="form-group" style="margin-bottom:14px">
+            <label class="form-label">Student ID</label>
+            <div style="display:flex;gap:8px">
+              <input class="form-control" type="text" id="rcStudentId"
+                placeholder="Paste student UUID...">
+              <button class="btn btn-ghost" onclick="loadReportCard()">Generate</button>
+            </div>
+          </div>
+          <div id="reportCardResult">
+            <div class="empty-state">
+              <div class="empty-icon">📄</div>
+              <p>Enter a student ID to generate their report card</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Grade Entry -->
+    <div class="panel" id="gradeEntryPanel" style="display:none">
+      <div class="panel-header">
+        <div class="panel-title">✏️ Enter Grades — <span id="selectedExamName"></span></div>
+        <button class="btn btn-ghost btn-sm" onclick="closeGradeEntry()">✕ Close</button>
+      </div>
+      <div class="panel-body">
+        <div id="gradeEntryBody">
+          <div class="loading-state"><div class="spinner"></div></div>
+        </div>
+        <div style="margin-top:16px;display:flex;gap:10px;justify-content:flex-end">
+          <button class="btn btn-primary" onclick="submitGrades()">💾 Save Grades</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<!-- ═══ CREATE EXAM MODAL ═══ -->
+<div class="modal-overlay" id="examModal">
+  <div class="modal">
+    <div class="modal-title">
+      📝 Create New Exam
+      <button class="modal-close" onclick="closeExamModal()">✕</button>
+    </div>
+
+    <div class="form-grid">
+      <div class="form-group form-full">
+        <label class="form-label">Exam Name *</label>
+        <input class="form-control" type="text" id="e_name"
+          placeholder="e.g. Midterm Exam — Mathematics">
+      </div>
+      <div class="form-group form-full">
+        <label class="form-label">Class ID *</label>
+        <input class="form-control" type="text" id="e_classId"
+          placeholder="Paste class UUID">
+      </div>
+      <div class="form-group form-full">
+        <label class="form-label">Subject ID *</label>
+        <input class="form-control" type="text" id="e_subjectId"
+          placeholder="Paste subject UUID">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Exam Type *</label>
+        <select class="form-control" id="e_type">
+          <option value="midterm">Midterm</option>
+          <option value="final">Final</option>
+          <option value="quiz">Quiz</option>
+          <option value="assignment">Assignment</option>
+          <option value="project">Project</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Term *</label>
+        <select class="form-control" id="e_term">
+          <option value="term1">Term 1</option>
+          <option value="term2">Term 2</option>
+          <option value="term3">Term 3</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Max Score</label>
+        <input class="form-control" type="number" id="e_maxScore" value="100">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Exam Date</label>
+        <input class="form-control" type="date" id="e_date">
+      </div>
+    </div>
+
+    <div style="display:flex;gap:10px;margin-top:20px;justify-content:flex-end">
+      <button class="btn btn-ghost" onclick="closeExamModal()">Cancel</button>
+      <button class="btn btn-primary" id="saveExamBtn" onclick="saveExam()">Create Exam</button>
+    </div>
+  </div>
+</div>
+
+<script src="assets/js/api.js"></script>
+<script>
+  requireAuth();
+  const user = getUser();
+  if (user) {
+    document.getElementById('userName').textContent     = user.email.split('@')[0];
+    document.getElementById('userRole').textContent     = user.role;
+    document.getElementById('userInitials').textContent = user.email[0].toUpperCase();
+  }
+
+  let currentExamId  = null;
+  let currentStudents = [];
+
+  // ── Load Exams ─────────────────────────────────────────
+  async function loadExams() {
+    const term = document.getElementById('termFilter').value;
+    const url  = term ? `/grades/exams?term=${term}` : '/grades/exams';
+    const res  = await api.get(url);
+
+    if (!res?.success) {
+      document.getElementById('examsBody').innerHTML =
+        `<tr><td colspan="6"><div class="empty-state"><p>Failed to load exams</p></div></td></tr>`;
+      return;
+    }
+
+    const exams = res.data;
+
+    document.getElementById('examsBody').innerHTML = exams.length
+      ? exams.map(e => `
+          <tr>
+            <td class="primary">${e.name}</td>
+            <td style="font-size:12px">${e.subject_name || '—'}</td>
+            <td><span class="badge badge-blue" style="text-transform:capitalize">${e.exam_type}</span></td>
+            <td style="font-size:12px;color:var(--text3)">${e.term}</td>
+            <td style="font-family:'JetBrains Mono';font-size:12px">${e.max_score}</td>
+            <td>
+              <button class="btn btn-ghost btn-sm" onclick="openGradeEntry('${e.id}','${e.name}','${e.class_id}')">
+                ✏️ Grades
+              </button>
+            </td>
+          </tr>
+        `).join('')
+      : `<tr><td colspan="6"><div class="empty-state"><div class="empty-icon">📝</div><p>No exams yet. Create one above.</p></div></td></tr>`;
+  }
+
+  // ── Grade Entry ────────────────────────────────────────
+  async function openGradeEntry(examId, examName, classId) {
+    currentExamId = examId;
+    document.getElementById('selectedExamName').textContent = examName;
+    document.getElementById('gradeEntryPanel').style.display = 'block';
+    document.getElementById('gradeEntryBody').innerHTML =
+      `<div class="loading-state"><div class="spinner"></div></div>`;
+
+    // Scroll to grade entry
+    document.getElementById('gradeEntryPanel').scrollIntoView({ behavior: 'smooth' });
+
+    // Load students in this class
+    const res = await api.get(`/students?limit=100&status=active`);
+    if (!res?.success) return;
+
+    currentStudents = res.data.students.filter(s => s.class_id === classId || !classId);
+
+    if (currentStudents.length === 0) {
+      document.getElementById('gradeEntryBody').innerHTML =
+        `<div class="empty-state"><p>No students found for this class</p></div>`;
+      return;
+    }
+
+    document.getElementById('gradeEntryBody').innerHTML = `
+      <table class="data-table">
+        <thead>
+          <tr><th>Student</th><th>Student ID</th><th>Score</th><th>Remarks</th></tr>
+        </thead>
+        <tbody>
+          ${currentStudents.map(s => `
+            <tr>
+              <td class="primary">${s.first_name} ${s.last_name}</td>
+              <td style="font-size:11px;color:var(--text3);font-family:'JetBrains Mono'">${s.student_number}</td>
+              <td>
+                <input type="number" class="form-control" id="score-${s.id}"
+                  placeholder="0-100" min="0" max="100" style="width:90px;padding:6px 10px">
+              </td>
+              <td>
+                <input type="text" class="form-control" id="remarks-${s.id}"
+                  placeholder="Optional remarks" style="font-size:12px">
+              </td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    `;
+  }
+
+  function closeGradeEntry() {
+    document.getElementById('gradeEntryPanel').style.display = 'none';
+    currentExamId = null;
+  }
+
+  async function submitGrades() {
+    if (!currentExamId || currentStudents.length === 0) return;
+
+    const grades = currentStudents
+      .map(s => {
+        const score = document.getElementById(`score-${s.id}`)?.value;
+        const remarks = document.getElementById(`remarks-${s.id}`)?.value;
+        return score !== '' && score !== undefined
+          ? { student_id: s.id, score: parseFloat(score), remarks: remarks || null }
+          : null;
+      })
+      .filter(Boolean);
+
+    if (grades.length === 0) {
+      showToast('Please enter at least one score.', 'error');
+      return;
+    }
+
+    const res = await api.post('/grades', { exam_id: currentExamId, grades });
+
+    if (res?.success) {
+      showToast(`Grades saved for ${res.data.total_graded} student(s)!`, 'success');
+      closeGradeEntry();
+    } else {
+      showToast(res?.message || 'Failed to save grades.', 'error');
+    }
+  }
+
+  // ── Report Card ────────────────────────────────────────
+  async function loadReportCard() {
+    const studentId = document.getElementById('rcStudentId').value.trim();
+    if (!studentId) { showToast('Please enter a student ID.', 'error'); return; }
+
+    document.getElementById('reportCardResult').innerHTML =
+      `<div class="loading-state"><div class="spinner"></div></div>`;
+
+    const res = await api.get(`/grades/report-card/${studentId}`);
+
+    if (!res?.success) {
+      document.getElementById('reportCardResult').innerHTML =
+        `<div class="empty-state"><p>Student not found or no grades yet.</p></div>`;
+      return;
+    }
+
+    const { student, academic_summary, attendance, subjects } = res.data;
+
+    document.getElementById('reportCardResult').innerHTML = `
+      <!-- Student Info -->
+      <div style="background:var(--bg3);border-radius:8px;padding:14px;margin-bottom:14px">
+        <div style="font-size:15px;font-weight:800;color:var(--text)">${student.first_name} ${student.last_name}</div>
+        <div style="font-size:11px;color:var(--text3);margin-top:2px">${student.student_number} • ${student.class_name || 'No class'}</div>
+      </div>
+
+      <!-- GPA Summary -->
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px">
+        <div style="background:var(--bg3);border-radius:8px;padding:10px;text-align:center">
+          <div style="font-size:22px;font-weight:800;color:var(--gold)">${academic_summary.gpa}</div>
+          <div style="font-size:10px;color:var(--text3)">GPA</div>
+        </div>
+        <div style="background:var(--bg3);border-radius:8px;padding:10px;text-align:center">
+          <div style="font-size:16px;font-weight:700;color:var(--blue)">
+            ${academic_summary.rank ? `${academic_summary.rank}/${academic_summary.total_in_class}` : '—'}
+          </div>
+          <div style="font-size:10px;color:var(--text3)">Rank</div>
+        </div>
+        <div style="background:var(--bg3);border-radius:8px;padding:10px;text-align:center">
+          <div style="font-size:16px;font-weight:700;color:${academic_summary.result === 'PASS' ? 'var(--green)' : 'var(--red)'}">
+            ${academic_summary.result}
+          </div>
+          <div style="font-size:10px;color:var(--text3)">Result</div>
+        </div>
+      </div>
+
+      <!-- Attendance -->
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:var(--bg3);border-radius:8px;margin-bottom:14px">
+        <span style="font-size:12px;color:var(--text3)">Attendance Rate</span>
+        <span style="font-size:13px;font-weight:700;color:var(--green)">${attendance.rate || 0}%</span>
+      </div>
+
+      <!-- Subjects -->
+      ${subjects.map(sub => `
+        <div style="padding:10px 0;border-bottom:1px solid var(--border)">
+          <div style="display:flex;align-items:center;justify-content:space-between">
+            <div>
+              <div style="font-size:13px;font-weight:600">${sub.subject}</div>
+              <div style="font-size:11px;color:var(--text3)">${sub.exams.length} exam(s)</div>
+            </div>
+            <div style="text-align:right">
+              <div style="font-size:16px;font-weight:800;color:var(--gold)">${sub.grade_letter}</div>
+              <div style="font-size:11px;color:var(--text3)">${sub.average}%</div>
+            </div>
+          </div>
+        </div>
+      `).join('') || '<p style="color:var(--text3);font-size:12px;text-align:center;padding:16px">No grades yet</p>'}
+    `;
+  }
+
+  // ── Exam Modal ─────────────────────────────────────────
+  function openExamModal() {
+    document.getElementById('examModal').classList.add('open');
+  }
+  function closeExamModal() {
+    document.getElementById('examModal').classList.remove('open');
+  }
+
+  async function saveExam() {
+    const name       = document.getElementById('e_name').value.trim();
+    const class_id   = document.getElementById('e_classId').value.trim();
+    const subject_id = document.getElementById('e_subjectId').value.trim();
+    const exam_type  = document.getElementById('e_type').value;
+    const term       = document.getElementById('e_term').value;
+    const max_score  = document.getElementById('e_maxScore').value;
+    const exam_date  = document.getElementById('e_date').value;
+
+    if (!name || !class_id || !subject_id) {
+      showToast('Name, Class ID, and Subject ID are required.', 'error');
+      return;
+    }
+
+    const btn = document.getElementById('saveExamBtn');
+    btn.textContent = 'Creating...';
+    btn.disabled    = true;
+
+    const res = await api.post('/grades/exams', {
+      name, class_id, subject_id, exam_type, term,
+      max_score: parseFloat(max_score),
+      exam_date: exam_date || null,
+    });
+
+    btn.textContent = 'Create Exam';
+    btn.disabled    = false;
+
+    if (res?.success) {
+      showToast(`Exam "${name}" created!`, 'success');
+      closeExamModal();
+      loadExams();
+    } else {
+      showToast(res?.message || 'Failed to create exam.', 'error');
+    }
+  }
+
+  loadExams();
+</script>
+</body>
+</html>
