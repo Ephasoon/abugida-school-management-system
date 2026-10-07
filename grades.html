@@ -188,6 +188,8 @@
   </div>
 </div>
 
+<script src="assets/js/config.js"></script>
+<script src="assets/js/escape.js"></script>
 <script src="assets/js/api.js"></script>
 <script>
   requireAuth();
@@ -218,13 +220,13 @@
     document.getElementById('examsBody').innerHTML = exams.length
       ? exams.map(e => `
           <tr>
-            <td class="primary">${e.name}</td>
-            <td style="font-size:12px">${e.subject_name || '—'}</td>
-            <td><span class="badge badge-blue" style="text-transform:capitalize">${e.exam_type}</span></td>
-            <td style="font-size:12px;color:var(--text3)">${e.term}</td>
-            <td style="font-family:'JetBrains Mono';font-size:12px">${e.max_score}</td>
+            <td class="primary">${escapeHtml(e.name)}</td>
+            <td style="font-size:12px">${escapeHtml(e.subject_name || '—')}</td>
+            <td><span class="badge badge-blue" style="text-transform:capitalize">${escapeHtml(e.exam_type)}</span></td>
+            <td style="font-size:12px;color:var(--text3)">${escapeHtml(e.term)}</td>
+            <td style="font-family:'JetBrains Mono';font-size:12px">${escapeHtml(e.max_score)}</td>
             <td>
-              <button class="btn btn-ghost btn-sm" onclick="openGradeEntry('${e.id}','${e.name}','${e.class_id}')">
+              <button class="btn btn-ghost btn-sm" onclick="openGradeEntry(${escapeHtml(JSON.stringify(e.id))},${escapeHtml(JSON.stringify(e.name))},${escapeHtml(JSON.stringify(e.class_id))})">
                 ✏️ Grades
               </button>
             </td>
@@ -264,14 +266,14 @@
         <tbody>
           ${currentStudents.map(s => `
             <tr>
-              <td class="primary">${s.first_name} ${s.last_name}</td>
-              <td style="font-size:11px;color:var(--text3);font-family:'JetBrains Mono'">${s.student_number}</td>
+              <td class="primary">${escapeHtml(s.first_name)} ${escapeHtml(s.last_name)}</td>
+              <td style="font-size:11px;color:var(--text3);font-family:'JetBrains Mono'">${escapeHtml(s.student_number)}</td>
               <td>
-                <input type="number" class="form-control" id="score-${s.id}"
+                <input type="number" class="form-control" id="score-${escapeHtml(s.id)}"
                   placeholder="0-100" min="0" max="100" style="width:90px;padding:6px 10px">
               </td>
               <td>
-                <input type="text" class="form-control" id="remarks-${s.id}"
+                <input type="text" class="form-control" id="remarks-${escapeHtml(s.id)}"
                   placeholder="Optional remarks" style="font-size:12px">
               </td>
             </tr>
@@ -335,25 +337,25 @@
     document.getElementById('reportCardResult').innerHTML = `
       <!-- Student Info -->
       <div style="background:var(--bg3);border-radius:8px;padding:14px;margin-bottom:14px">
-        <div style="font-size:15px;font-weight:800;color:var(--text)">${student.first_name} ${student.last_name}</div>
-        <div style="font-size:11px;color:var(--text3);margin-top:2px">${student.student_number} • ${student.class_name || 'No class'}</div>
+        <div style="font-size:15px;font-weight:800;color:var(--text)">${escapeHtml(student.first_name)} ${escapeHtml(student.last_name)}</div>
+        <div style="font-size:11px;color:var(--text3);margin-top:2px">${escapeHtml(student.student_number)} • ${escapeHtml(student.class_name || 'No class')}</div>
       </div>
 
       <!-- GPA Summary -->
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px">
         <div style="background:var(--bg3);border-radius:8px;padding:10px;text-align:center">
-          <div style="font-size:22px;font-weight:800;color:var(--gold)">${academic_summary.gpa}</div>
+          <div style="font-size:22px;font-weight:800;color:var(--gold)">${escapeHtml(academic_summary.gpa)}</div>
           <div style="font-size:10px;color:var(--text3)">GPA</div>
         </div>
         <div style="background:var(--bg3);border-radius:8px;padding:10px;text-align:center">
           <div style="font-size:16px;font-weight:700;color:var(--blue)">
-            ${academic_summary.rank ? `${academic_summary.rank}/${academic_summary.total_in_class}` : '—'}
+            ${academic_summary.rank ? `${escapeHtml(academic_summary.rank)}/${escapeHtml(academic_summary.total_in_class)}` : '—'}
           </div>
           <div style="font-size:10px;color:var(--text3)">Rank</div>
         </div>
         <div style="background:var(--bg3);border-radius:8px;padding:10px;text-align:center">
           <div style="font-size:16px;font-weight:700;color:${academic_summary.result === 'PASS' ? 'var(--green)' : 'var(--red)'}">
-            ${academic_summary.result}
+            ${escapeHtml(academic_summary.result)}
           </div>
           <div style="font-size:10px;color:var(--text3)">Result</div>
         </div>
@@ -362,7 +364,7 @@
       <!-- Attendance -->
       <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:var(--bg3);border-radius:8px;margin-bottom:14px">
         <span style="font-size:12px;color:var(--text3)">Attendance Rate</span>
-        <span style="font-size:13px;font-weight:700;color:var(--green)">${attendance.rate || 0}%</span>
+        <span style="font-size:13px;font-weight:700;color:var(--green)">${escapeHtml(attendance.rate || 0)}%</span>
       </div>
 
       <!-- Subjects -->
@@ -370,12 +372,12 @@
         <div style="padding:10px 0;border-bottom:1px solid var(--border)">
           <div style="display:flex;align-items:center;justify-content:space-between">
             <div>
-              <div style="font-size:13px;font-weight:600">${sub.subject}</div>
+              <div style="font-size:13px;font-weight:600">${escapeHtml(sub.subject)}</div>
               <div style="font-size:11px;color:var(--text3)">${sub.exams.length} exam(s)</div>
             </div>
             <div style="text-align:right">
-              <div style="font-size:16px;font-weight:800;color:var(--gold)">${sub.grade_letter}</div>
-              <div style="font-size:11px;color:var(--text3)">${sub.average}%</div>
+              <div style="font-size:16px;font-weight:800;color:var(--gold)">${escapeHtml(sub.grade_letter)}</div>
+              <div style="font-size:11px;color:var(--text3)">${escapeHtml(sub.average)}%</div>
             </div>
           </div>
         </div>

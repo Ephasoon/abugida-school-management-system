@@ -64,6 +64,8 @@
   </div>
 </main>
 
+<script src="assets/js/config.js"></script>
+<script src="assets/js/escape.js"></script>
 <script src="assets/js/api.js"></script>
 <script>
   requireAuth();
@@ -78,16 +80,13 @@
   const studentId = params.get('id');
   if (!studentId) window.location.href = 'students.html';
 
-  const API_BASE = 'http://localhost:3000/api';
 
   // PDF download
   async function downloadPDF(url, filename) {
     try {
       showToast('Generating PDF...', 'success');
-      const res = await fetch(`${API_BASE}${url}`, {
-        headers: { 'Authorization': `Bearer ${getToken()}` },
-        credentials: 'include',
-      });
+      const res = await authFetch(url);   // refreshes the token if it expired
+      if (!res) return;                    // session ended
       if (!res.ok) { showToast('Failed to generate PDF.', 'error'); return; }
       const blob = await res.blob();
       const link = document.createElement('a');
@@ -103,8 +102,8 @@
 
   function infoRow(label, value, full=false) {
     return `<div ${full?'style="grid-column:1/-1"':''}>
-      <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:3px">${label}</div>
-      <div style="font-size:13px;font-weight:500">${value||'—'}</div>
+      <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:3px">${escapeHtml(label)}</div>
+      <div style="font-size:13px;font-weight:500">${escapeHtml(value||'—')}</div>
     </div>`;
   }
 
@@ -120,7 +119,7 @@
     const [profileRes, gradesRes, feesRes, attRes] = await Promise.all([
       api.get(`/students/${studentId}`),
       api.get(`/grades/report-card/${studentId}`),
-      api.get(`/finance/student/${studentId}`),
+      canSeeFinance() ? api.get(`/finance/student/${studentId}`) : null,   // finance is admin-only
       api.get(`/attendance/student/${studentId}`),
     ]);
 
@@ -139,7 +138,7 @@
     const att = attRes?.data;
 
     document.getElementById('pageTitle').innerHTML =
-      `${s.first_name} ${s.last_name} <span class="sub">${s.student_number}</span>`;
+      `${escapeHtml(s.first_name)} ${escapeHtml(s.last_name)} <span class="sub">${escapeHtml(s.student_number)}</span>`;
 
     document.getElementById('mainContent').innerHTML = `
       <!-- PDF Buttons -->
@@ -153,19 +152,19 @@
         <div class="panel">
           <div class="panel-header">
             <div class="panel-title">👤 Personal Information</div>
-            <span class="badge ${s.status==='active'?'badge-green':'badge-red'}">${s.status}</span>
+            <span class="badge ${s.status==='active'?'badge-green':'badge-red'}">${escapeHtml(s.status)}</span>
           </div>
           <div class="panel-body">
             <div style="display:flex;align-items:center;gap:16px;margin-bottom:20px;padding-bottom:20px;border-bottom:1px solid var(--border)">
               <div style="width:64px;height:64px;background:linear-gradient(135deg,var(--purple),var(--blue));
                 border-radius:16px;display:flex;align-items:center;justify-content:center;
                 font-size:28px;font-weight:800;color:#fff;flex-shrink:0">
-                ${s.first_name[0]}${s.last_name[0]}
+                ${escapeHtml(s.first_name[0])}${escapeHtml(s.last_name[0])}
               </div>
               <div>
-                <div style="font-size:18px;font-weight:800">${s.first_name} ${s.last_name}${s.fathers_name?' '+s.fathers_name:''}</div>
-                <div style="font-size:12px;color:var(--text3);margin-top:2px">${s.student_number}</div>
-                <div style="font-size:12px;color:var(--gold);margin-top:2px">${s.class_name||'No class assigned'}</div>
+                <div style="font-size:18px;font-weight:800">${escapeHtml(s.first_name)} ${escapeHtml(s.last_name)}${s.fathers_name?' '+escapeHtml(s.fathers_name):''}</div>
+                <div style="font-size:12px;color:var(--text3);margin-top:2px">${escapeHtml(s.student_number)}</div>
+                <div style="font-size:12px;color:var(--gold);margin-top:2px">${escapeHtml(s.class_name||'No class assigned')}</div>
               </div>
             </div>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
@@ -189,12 +188,12 @@
               ${gr ? `
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
                   <div style="background:var(--bg3);border-radius:8px;padding:14px;text-align:center">
-                    <div style="font-size:26px;font-weight:800;color:var(--gold)">${gr.academic_summary?.gpa||'0.00'}</div>
+                    <div style="font-size:26px;font-weight:800;color:var(--gold)">${escapeHtml(gr.academic_summary?.gpa||'0.00')}</div>
                     <div style="font-size:11px;color:var(--text3)">GPA</div>
                   </div>
                   <div style="background:var(--bg3);border-radius:8px;padding:14px;text-align:center">
                     <div style="font-size:18px;font-weight:800;color:${gr.academic_summary?.result==='PASS'?'var(--green)':'var(--red)'}">
-                      ${gr.academic_summary?.result||'—'}
+                      ${escapeHtml(gr.academic_summary?.result||'—')}
                     </div>
                     <div style="font-size:11px;color:var(--text3)">Result</div>
                   </div>
@@ -206,26 +205,26 @@
           <div class="panel" style="margin-bottom:16px">
             <div class="panel-header"><div class="panel-title">📅 Attendance</div></div>
             <div class="panel-body">
-              ${att?.overall ? `
+              ${att?.stats && parseInt(att.stats.total_days) > 0 ? `
                 <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">
                   <div style="background:var(--bg3);border-radius:8px;padding:10px;text-align:center">
-                    <div style="font-size:20px;font-weight:800;color:var(--green)">${att.overall.rate||0}%</div>
+                    <div style="font-size:20px;font-weight:800;color:var(--green)">${escapeHtml(att.stats.attendance_rate||0)}%</div>
                     <div style="font-size:10px;color:var(--text3)">Rate</div>
                   </div>
                   <div style="background:var(--bg3);border-radius:8px;padding:10px;text-align:center">
-                    <div style="font-size:20px;font-weight:800">${att.overall.present||0}</div>
+                    <div style="font-size:20px;font-weight:800">${escapeHtml(att.stats.present||0)}</div>
                     <div style="font-size:10px;color:var(--text3)">Present</div>
                   </div>
                   <div style="background:var(--bg3);border-radius:8px;padding:10px;text-align:center">
-                    <div style="font-size:20px;font-weight:800;color:var(--red)">${att.overall.absent||0}</div>
+                    <div style="font-size:20px;font-weight:800;color:var(--red)">${escapeHtml(att.stats.absent||0)}</div>
                     <div style="font-size:10px;color:var(--text3)">Absent</div>
                   </div>
                 </div>` : '<p style="color:var(--text3);font-size:12px">No attendance yet</p>'}
             </div>
           </div>
 
-          <!-- Fees -->
-          <div class="panel">
+          <!-- Fees (admins only) -->
+          <div class="panel" ${canSeeFinance() ? '' : 'style="display:none"'}>
             <div class="panel-header"><div class="panel-title">💰 Fee Balance</div></div>
             <div class="panel-body">
               ${fee?.overview ? `
@@ -258,10 +257,10 @@
               <tbody>
                 ${gr.subjects.map(sub=>`
                   <tr>
-                    <td class="primary">${sub.subject}</td>
-                    <td style="font-family:'JetBrains Mono';font-size:12px">${sub.average}%</td>
-                    <td><span class="badge ${gradeColor(sub.grade_letter)}">${sub.grade_letter}</span></td>
-                    <td style="font-size:12px;color:var(--text3)">${sub.exams?.length||0} exam(s)</td>
+                    <td class="primary">${escapeHtml(sub.subject)}</td>
+                    <td style="font-family:'JetBrains Mono';font-size:12px">${escapeHtml(sub.average)}%</td>
+                    <td><span class="badge ${gradeColor(sub.grade_letter)}">${escapeHtml(sub.grade_letter)}</span></td>
+                    <td style="font-size:12px;color:var(--text3)">${escapeHtml(sub.exams?.length||0)} exam(s)</td>
                   </tr>`).join('')}
               </tbody>
             </table>

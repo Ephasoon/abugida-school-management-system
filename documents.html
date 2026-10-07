@@ -244,6 +244,8 @@
   </div>
 </div>
 
+<script src="assets/js/config.js"></script>
+<script src="assets/js/escape.js"></script>
 <script src="assets/js/api.js"></script>
 <script>
   requireAuth();
@@ -288,10 +290,10 @@
       ...res.data
     ].map(c => `
       <div class="cat-card ${c.key==='all'&&!activeCategory?'active':c.key===activeCategory?'active':''}"
-        onclick="filterByCategory('${c.key==='all'?'':c.key}')">
-        <div class="cat-icon">${c.icon||'📁'}</div>
-        <div class="cat-name">${c.label}</div>
-        <div class="cat-count">${c.count||0} file${c.count!==1?'s':''}</div>
+        onclick="filterByCategory(${escapeHtml(JSON.stringify(c.key==='all'?'':c.key))})">
+        <div class="cat-icon">${escapeHtml(c.icon||'📁')}</div>
+        <div class="cat-name">${escapeHtml(c.label)}</div>
+        <div class="cat-count">${escapeHtml(c.count||0)} file${c.count!==1?'s':''}</div>
       </div>`).join('');
   }
 
@@ -330,25 +332,23 @@
           <div class="doc-card">
             <div class="doc-icon ${fileTypeClass(d.mime_type)}">${fileIcon(d.mime_type)}</div>
             <div class="doc-info">
-              <div class="doc-title">${d.title}</div>
+              <div class="doc-title">${escapeHtml(d.title)}</div>
               <div class="doc-meta">
-                ${CATS[d.category]?.icon||'📁'} ${CATS[d.category]?.label||d.category}
+                ${escapeHtml(CATS[d.category]?.icon||'📁')} ${escapeHtml(CATS[d.category]?.label||d.category)}
                 &nbsp;·&nbsp;
-                ${d.student_name ? `👤 ${d.student_name}` : 'No student linked'}
+                ${d.student_name ? `👤 ${escapeHtml(d.student_name)}` : 'No student linked'}
                 &nbsp;·&nbsp;
                 <span class="size-badge">${formatSize(d.file_size)}</span>
                 &nbsp;·&nbsp;
                 ${formatDate(d.created_at)}
               </div>
-              ${d.description ? `<div style="font-size:11px;color:var(--text3);margin-top:3px">${d.description}</div>` : ''}
+              ${d.description ? `<div style="font-size:11px;color:var(--text3);margin-top:3px">${escapeHtml(d.description)}</div>` : ''}
             </div>
             <div class="doc-actions">
-              <a href="http://localhost:3000/api/documents/download/${d.id}"
-                class="btn btn-ghost btn-sm"
-                target="_blank"
-                onclick="trackDownload('${d.id}')">⬇ Download</a>
+              <button class="btn btn-ghost btn-sm"
+                onclick="downloadFile('/documents/download/' + encodeURIComponent(${escapeHtml(JSON.stringify(d.id))}), ${escapeHtml(JSON.stringify(d.file_name || 'document'))})">⬇ Download</button>
               <button class="btn btn-danger btn-sm"
-                onclick="deleteDoc('${d.id}','${d.title.replace(/'/g,"\\'")}')">✕</button>
+                onclick="deleteDoc(${escapeHtml(JSON.stringify(d.id))},${escapeHtml(JSON.stringify(d.title))})">✕</button>
             </div>
           </div>`).join('')
       : `<div class="empty-state"><div class="empty-icon">📁</div>
@@ -357,13 +357,13 @@
     // Pagination
     document.getElementById('pagination').innerHTML = pg.total > 0 ? `
       <span style="font-size:12px;color:var(--text3)">
-        Showing ${((pg.page-1)*pg.limit)+1}–${Math.min(pg.page*pg.limit,pg.total)} of ${pg.total}
+        Showing ${escapeHtml(((pg.page-1)*pg.limit)+1)}–${escapeHtml(Math.min(pg.page*pg.limit,pg.total))} of ${escapeHtml(pg.total)}
       </span>
       <div style="display:flex;gap:6px">
         <button class="btn btn-ghost btn-sm" onclick="changePage(-1)"
           ${pg.page<=1?'disabled style="opacity:0.4"':''}>← Prev</button>
         <span style="font-size:12px;color:var(--text2);padding:6px 10px">
-          ${pg.page} / ${pg.totalPages}
+          ${escapeHtml(pg.page)} / ${escapeHtml(pg.totalPages)}
         </span>
         <button class="btn btn-ghost btn-sm" onclick="changePage(1)"
           ${pg.page>=pg.totalPages?'disabled style="opacity:0.4"':''}>Next →</button>
@@ -510,13 +510,13 @@
       if (student) formData.append('student_id', student);
       if (desc)    formData.append('description', desc);
 
-      const token = localStorage.getItem('asms_token');
-      const res   = await fetch('http://localhost:3000/api/documents/upload', {
-        method:      'POST',
-        headers:     { 'Authorization': `Bearer ${token}` },
-        credentials: 'include',
-        body:        formData,
+      // authFetch adds the token, refreshes it on 401, and leaves the
+      // multipart Content-Type for the browser to set
+      const res   = await authFetch('/documents/upload', {
+        method: 'POST',
+        body:   formData,
       });
+      if (!res) return;   // session ended
       const data = await res.json();
 
       clearInterval(interval);

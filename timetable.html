@@ -296,6 +296,8 @@
   </div>
 </div>
 
+<script src="assets/js/config.js"></script>
+<script src="assets/js/escape.js"></script>
 <script src="assets/js/api.js"></script>
 <script>
   requireAuth();
@@ -383,8 +385,8 @@
       html += `<tr>`;
       html += `
         <td class="period-label">
-          <div style="font-size:11px;font-weight:800;color:var(--text)">${p.label}</div>
-          <div style="font-size:9px;color:var(--text3);margin-top:2px">${p.time}</div>
+          <div style="font-size:11px;font-weight:800;color:var(--text)">${escapeHtml(p.label)}</div>
+          <div style="font-size:9px;color:var(--text3);margin-top:2px">${escapeHtml(p.time)}</div>
         </td>
       `;
 
@@ -396,12 +398,12 @@
         if (slot) {
           html += `
             <td>
-              <div class="tt-slot ${colorClass}" onclick="editSlot('${slot.id}')">
-                <button class="tt-delete" onclick="event.stopPropagation();removeSlot('${slot.id}')">✕</button>
-                <div class="tt-subject">${slot.subject_name || '—'}</div>
-                <div class="tt-teacher">${slot.teacher_name || 'No teacher'}</div>
-                ${slot.room ? `<div class="tt-room">📍 ${slot.room}</div>` : ''}
-                <div style="font-size:9px;color:var(--text3);margin-top:3px">${formatTime(slot.start_time)} – ${formatTime(slot.end_time)}</div>
+              <div class="tt-slot ${colorClass}" onclick="editSlot(${escapeHtml(JSON.stringify(slot.id))})">
+                <button class="tt-delete" onclick="event.stopPropagation();removeSlot(${escapeHtml(JSON.stringify(slot.id))})">✕</button>
+                <div class="tt-subject">${escapeHtml(slot.subject_name || '—')}</div>
+                <div class="tt-teacher">${escapeHtml(slot.teacher_name || 'No teacher')}</div>
+                ${slot.room ? `<div class="tt-room">📍 ${escapeHtml(slot.room)}</div>` : ''}
+                <div style="font-size:9px;color:var(--text3);margin-top:3px">${escapeHtml(formatTime(slot.start_time))} – ${escapeHtml(formatTime(slot.end_time))}</div>
               </div>
             </td>
           `;
@@ -461,7 +463,7 @@
     const subSel = document.getElementById('sl_subject');
     subSel.innerHTML = '<option value="">Select subject...</option>';
     allSubjects.forEach(s => {
-      subSel.innerHTML += `<option value="${s.id}">${s.name} (${s.code})</option>`;
+      subSel.innerHTML += `<option value="${escapeHtml(s.id)}">${escapeHtml(s.name)} (${escapeHtml(s.code)})</option>`;
     });
 
     // Load teachers
@@ -472,7 +474,7 @@
     const teachSel = document.getElementById('sl_teacher');
     teachSel.innerHTML = '<option value="">No teacher assigned</option>';
     allTeachers.forEach(t => {
-      teachSel.innerHTML += `<option value="${t.id}">${t.first_name} ${t.last_name}</option>`;
+      teachSel.innerHTML += `<option value="${escapeHtml(t.id)}">${escapeHtml(t.first_name)} ${escapeHtml(t.last_name)}</option>`;
     });
 
     document.getElementById('slotModal').classList.add('open');

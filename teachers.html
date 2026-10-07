@@ -45,6 +45,7 @@
       Teachers
       <span class="sub">አስተማሪዎች</span>
     </div>
+    <a class="btn btn-ghost" href="teacher-assignments.html">🏫 Class Assignments</a>
     <button class="btn btn-primary" onclick="openAddModal()">+ Add Teacher</button>
   </div>
 
@@ -117,7 +118,7 @@
     </div>
 
     <div style="background:rgba(245,166,35,0.08);border:1px solid rgba(245,166,35,0.2);border-radius:8px;padding:12px;margin-bottom:18px;font-size:12px;color:var(--gold)">
-      💡 A login account will be created automatically. Default password: <strong>Teacher@1234</strong>
+      💡 A login account will be created with a one-time temporary password, shown once after saving.
     </div>
 
     <div class="form-grid">
@@ -199,6 +200,35 @@
   </div>
 </div>
 
+<!-- One-time temporary password for a newly created teacher -->
+<div class="modal-overlay" id="tempPasswordModal">
+  <div class="modal" style="max-width:460px">
+    <div class="modal-title">
+      🔑 Teacher Login Created
+      <button class="modal-close" onclick="closeTempPasswordModal()">✕</button>
+    </div>
+    <div style="font-size:13px;margin-bottom:12px">
+      <span id="tp_teacher"></span><br>
+      <span style="color:var(--text3)">Login email:</span> <strong id="tp_email"></strong>
+    </div>
+    <label class="form-label">Temporary password</label>
+    <div style="display:flex;gap:8px;align-items:center;margin-bottom:14px">
+      <input class="form-control" id="tp_password" readonly
+        style="font-family:'JetBrains Mono';font-size:15px;letter-spacing:1px">
+      <button class="btn btn-ghost" onclick="copyTempPassword()">📋 Copy</button>
+    </div>
+    <div style="background:rgba(245,166,35,0.08);border:1px solid rgba(245,166,35,0.2);border-radius:8px;padding:12px;font-size:12px;color:var(--gold)">
+      ⚠️ This password is shown <strong>only once</strong>. Copy it now and give it to the teacher privately.
+      They must change it when they first log in.
+    </div>
+    <div style="display:flex;justify-content:flex-end;margin-top:18px">
+      <button class="btn btn-primary" onclick="closeTempPasswordModal()">Done</button>
+    </div>
+  </div>
+</div>
+
+<script src="assets/js/config.js"></script>
+<script src="assets/js/escape.js"></script>
 <script src="assets/js/api.js"></script>
 <script>
   requireAuth();
@@ -249,26 +279,26 @@
 
     document.getElementById('teachersBody').innerHTML = teachers.map(t => `
       <tr>
-        <td style="font-family:'JetBrains Mono';font-size:11px;color:var(--text3)">${t.teacher_number}</td>
-        <td class="primary">${t.first_name} ${t.last_name}</td>
-        <td style="font-size:12px;color:var(--text2)">${t.email || '—'}</td>
-        <td style="font-size:12px">${t.specialization || '—'}</td>
+        <td style="font-family:'JetBrains Mono';font-size:11px;color:var(--text3)">${escapeHtml(t.teacher_number)}</td>
+        <td class="primary">${escapeHtml(t.first_name)} ${escapeHtml(t.last_name)}</td>
+        <td style="font-size:12px;color:var(--text2)">${escapeHtml(t.email || '—')}</td>
+        <td style="font-size:12px">${escapeHtml(t.specialization || '—')}</td>
         <td style="font-size:11px;max-width:150px">
           ${(t.subjects || []).length > 0
-            ? t.subjects.map(s => `<span class="badge badge-blue" style="margin:1px;font-size:10px">${s}</span>`).join('')
+            ? t.subjects.map(s => `<span class="badge badge-blue" style="margin:1px;font-size:10px">${escapeHtml(s)}</span>`).join('')
             : '<span style="color:var(--text3)">None assigned</span>'
           }
         </td>
         <td style="text-align:center">
-          <span class="badge badge-gold">${t.class_count || 0}</span>
+          <span class="badge badge-gold">${escapeHtml(t.class_count || 0)}</span>
         </td>
         <td>${t.is_active
           ? '<span class="badge badge-green">Active</span>'
           : '<span class="badge badge-red">Inactive</span>'}</td>
         <td>
           <div style="display:flex;gap:6px">
-            <button class="btn btn-ghost btn-sm" onclick="viewTeacher('${t.id}')">View</button>
-            <button class="btn btn-ghost btn-sm" onclick="openSubjectModal('${t.id}')">📚</button>
+            <button class="btn btn-ghost btn-sm" onclick="viewTeacher(${escapeHtml(JSON.stringify(t.id))})">View</button>
+            <button class="btn btn-ghost btn-sm" onclick="openSubjectModal(${escapeHtml(JSON.stringify(t.id))})">📚</button>
           </div>
         </td>
       </tr>
@@ -326,12 +356,38 @@
     btn.disabled    = false;
 
     if (res?.success) {
-      showToast(`${res.data.teacher_number} added! Login: ${email} / Teacher@1234`, 'success');
       closeAddModal();
       loadTeachers();
+      showTempPasswordModal(res.data);
     } else {
       showToast(res?.message || 'Failed to add teacher.', 'error');
     }
+  }
+
+  // ── One-time temporary password ────────────────────────
+  // Values are set with textContent / value, never as HTML.
+  function showTempPasswordModal(teacher) {
+    document.getElementById('tp_teacher').textContent =
+      `${teacher.teacher_number} — ${teacher.first_name} ${teacher.last_name}`;
+    document.getElementById('tp_email').textContent = teacher.email;
+    document.getElementById('tp_password').value    = teacher.temporary_password;
+    document.getElementById('tempPasswordModal').classList.add('open');
+  }
+
+  async function copyTempPassword() {
+    const input = document.getElementById('tp_password');
+    try {
+      await navigator.clipboard.writeText(input.value);
+      showToast('Password copied.', 'success');
+    } catch {
+      input.select();   // clipboard API unavailable: select it for Ctrl+C
+      showToast('Press Ctrl+C to copy the selected password.', 'error');
+    }
+  }
+
+  function closeTempPasswordModal() {
+    document.getElementById('tempPasswordModal').classList.remove('open');
+    document.getElementById('tp_password').value = '';   // do not keep it in the page
   }
 
   // ── View Teacher Detail ────────────────────────────────
@@ -352,12 +408,12 @@
       <!-- Header -->
       <div style="display:flex;align-items:center;gap:16px;margin-bottom:20px;padding-bottom:20px;border-bottom:1px solid var(--border)">
         <div style="width:56px;height:56px;background:linear-gradient(135deg,var(--teal),var(--blue));border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:800;color:#fff;flex-shrink:0">
-          ${t.first_name[0]}${t.last_name[0]}
+          ${escapeHtml(t.first_name[0])}${escapeHtml(t.last_name[0])}
         </div>
         <div>
-          <div style="font-size:17px;font-weight:800">${t.first_name} ${t.last_name}</div>
-          <div style="font-size:12px;color:var(--text3)">${t.teacher_number} • ${t.email}</div>
-          <div style="font-size:12px;color:var(--teal);margin-top:2px">${t.specialization || 'No specialization'}</div>
+          <div style="font-size:17px;font-weight:800">${escapeHtml(t.first_name)} ${escapeHtml(t.last_name)}</div>
+          <div style="font-size:12px;color:var(--text3)">${escapeHtml(t.teacher_number)} • ${escapeHtml(t.email)}</div>
+          <div style="font-size:12px;color:var(--teal);margin-top:2px">${escapeHtml(t.specialization || 'No specialization')}</div>
         </div>
       </div>
 
@@ -374,7 +430,7 @@
         <div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:8px">Subjects</div>
         <div style="display:flex;flex-wrap:wrap;gap:6px">
           ${t.subjects?.length > 0
-            ? t.subjects.map(s => `<span class="badge badge-blue">${s.name} (${s.code})</span>`).join('')
+            ? t.subjects.map(s => `<span class="badge badge-blue">${escapeHtml(s.name)} (${escapeHtml(s.code)})</span>`).join('')
             : '<span style="color:var(--text3);font-size:12px">No subjects assigned yet</span>'
           }
         </div>
@@ -389,8 +445,8 @@
               <tbody>
                 ${t.classes.map(c => `
                   <tr>
-                    <td class="primary">${c.name}</td>
-                    <td style="font-size:12px">${c.subject_name}</td>
+                    <td class="primary">${escapeHtml(c.name)}</td>
+                    <td style="font-size:12px">${escapeHtml(c.subject_name)}</td>
                   </tr>
                 `).join('')}
               </tbody>
@@ -400,7 +456,7 @@
       </div>
 
       <div style="margin-top:20px;display:flex;gap:10px">
-        <button class="btn btn-ghost" onclick="openSubjectModal('${t.id}');closeDetailModal()">
+        <button class="btn btn-ghost" onclick="openSubjectModal(${escapeHtml(JSON.stringify(t.id))});closeDetailModal()">
           📚 Assign Subjects
         </button>
       </div>
@@ -410,8 +466,8 @@
   function detailRow(label, value) {
     return `
       <div>
-        <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:3px">${label}</div>
-        <div style="font-size:13px;font-weight:500">${value}</div>
+        <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:3px">${escapeHtml(label)}</div>
+        <div style="font-size:13px;font-weight:500">${escapeHtml(value)}</div>
       </div>
     `;
   }
@@ -441,12 +497,12 @@
       <label style="display:flex;align-items:center;gap:10px;padding:10px;border-radius:8px;cursor:pointer;transition:background 0.15s;border:1px solid var(--border);margin-bottom:6px"
         onmouseover="this.style.background='var(--bg3)'"
         onmouseout="this.style.background='transparent'">
-        <input type="checkbox" id="sub-${s.id}" value="${s.id}"
+        <input type="checkbox" id="sub-${escapeHtml(s.id)}" value="${escapeHtml(s.id)}"
           ${currentSubjectIds.includes(s.id) ? 'checked' : ''}
           style="accent-color:var(--gold);width:16px;height:16px;cursor:pointer">
         <div>
-          <div style="font-size:13px;font-weight:600">${s.name}</div>
-          <div style="font-size:11px;color:var(--text3)">${s.code}</div>
+          <div style="font-size:13px;font-weight:600">${escapeHtml(s.name)}</div>
+          <div style="font-size:11px;color:var(--text3)">${escapeHtml(s.code)}</div>
         </div>
       </label>
     `).join('');

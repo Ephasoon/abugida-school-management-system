@@ -125,8 +125,8 @@
         </div>
       </div>
 
-      <!-- Finance Summary -->
-      <div class="panel">
+      <!-- Finance Summary (admins only; removed for other roles by api.js) -->
+      <div class="panel" data-finance>
         <div class="panel-header">
           <div class="panel-title">💰 Finance Overview</div>
           <a href="finance.html" class="btn btn-ghost btn-sm">Details →</a>
@@ -164,6 +164,8 @@
   </div>
 </main>
 
+<script src="assets/js/config.js"></script>
+<script src="assets/js/escape.js"></script>
 <script src="assets/js/api.js"></script>
 <script>
   // ── Auth check ───────────────────────────────────────────
@@ -181,7 +183,7 @@
   async function loadDashboard() {
     await Promise.all([
       loadStudentStats(),
-      loadFinanceSummary(),
+      canSeeFinance() ? loadFinanceSummary() : null,
     ]);
   }
 
@@ -203,9 +205,9 @@
 
     tbody.innerHTML = students.map(s => `
       <tr>
-        <td class="primary">${s.first_name} ${s.last_name}</td>
-        <td style="font-size:11px;color:var(--text3);font-family:'JetBrains Mono'">${s.student_number}</td>
-        <td>${s.class_name || '<span style="color:var(--text3)">No class</span>'}</td>
+        <td class="primary">${escapeHtml(s.first_name)} ${escapeHtml(s.last_name)}</td>
+        <td style="font-size:11px;color:var(--text3);font-family:'JetBrains Mono'">${escapeHtml(s.student_number)}</td>
+        <td>${s.class_name ? escapeHtml(s.class_name) : '<span style="color:var(--text3)">No class</span>'}</td>
         <td>${statusBadge(s.status)}</td>
       </tr>
     `).join('');
@@ -238,10 +240,10 @@
       </div>
       <div style="display:flex;align-items:center;justify-content:space-between;font-size:12px">
         <span style="color:var(--text3)">Collection Rate</span>
-        <span style="font-weight:700;color:var(--gold)">${s.collection_rate || 0}%</span>
+        <span style="font-weight:700;color:var(--gold)">${escapeHtml(s.collection_rate || 0)}%</span>
       </div>
       <div style="height:6px;background:var(--bg3);border-radius:3px;margin-top:8px;overflow:hidden">
-        <div style="height:100%;width:${s.collection_rate || 0}%;background:var(--gold);border-radius:3px;transition:width 1s ease"></div>
+        <div style="height:100%;width:${parseFloat(s.collection_rate) || 0}%;background:var(--gold);border-radius:3px;transition:width 1s ease"></div>
       </div>
     `;
 
@@ -256,11 +258,11 @@
 
     ptbody.innerHTML = payments.map(p => `
       <tr>
-        <td class="primary">${p.student_name}</td>
+        <td class="primary">${escapeHtml(p.student_name)}</td>
         <td style="font-family:'JetBrains Mono';font-size:12px;color:var(--green)">${formatETB(p.amount_paid)}</td>
         <td>${statusBadge(p.payment_method)}</td>
         <td style="font-size:12px;color:var(--text3)">${formatDate(p.payment_date)}</td>
-        <td style="font-family:'JetBrains Mono';font-size:11px;color:var(--text3)">${p.receipt_number || '—'}</td>
+        <td style="font-family:'JetBrains Mono';font-size:11px;color:var(--text3)">${escapeHtml(p.receipt_number || '—')}</td>
       </tr>
     `).join('');
 

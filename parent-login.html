@@ -94,8 +94,9 @@
     © 2026 Äbugida School Management System
   </div>
 </div>
+<script src="assets/js/config.js"></script>
 <script>
-  const API = 'http://localhost:3000/api';
+  const API = window.ASMS_CONFIG.API_BASE;
   document.addEventListener('keydown', e => { if(e.key==='Enter') handleLogin(); });
   if (localStorage.getItem('parent_token')) window.location.href = 'parent-dashboard.html';
 

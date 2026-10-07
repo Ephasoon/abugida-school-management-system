@@ -351,6 +351,8 @@
   </div>
 </div>
 
+<script src="assets/js/config.js"></script>
+<script src="assets/js/escape.js"></script>
 <script src="assets/js/api.js"></script>
 <script>
   requireAuth();
@@ -424,8 +426,8 @@
       html += `<div class="cal-cell ${isToday?'today':''}">
         <div class="cal-date">${d}</div>
         ${exams.map(e => `
-          <div class="cal-exam ${e.exam_type}" title="${e.class_name} — ${e.subject_name}">
-            ${e.subject_code} · ${e.class_name?.split(' ').slice(-2).join(' ')}
+          <div class="cal-exam ${escapeHtml(e.exam_type)}" title="${escapeHtml(e.class_name)} — ${escapeHtml(e.subject_name)}">
+            ${escapeHtml(e.subject_code)} · ${escapeHtml(e.class_name?.split(' ').slice(-2).join(' '))}
           </div>
         `).join('')}
       </div>`;
@@ -456,26 +458,26 @@
     document.getElementById('listBody').innerHTML = exams.length
       ? exams.map(e => `
           <tr>
-            <td class="primary">${e.name}</td>
-            <td style="font-size:12px">${e.class_name||'—'}</td>
-            <td style="font-size:12px">${e.subject_name||'—'}</td>
+            <td class="primary">${escapeHtml(e.name)}</td>
+            <td style="font-size:12px">${escapeHtml(e.class_name||'—')}</td>
+            <td style="font-size:12px">${escapeHtml(e.subject_name||'—')}</td>
             <td>
               <span class="badge ${typeColor(e.exam_type)}" style="text-transform:capitalize">
-                ${e.exam_type}
+                ${escapeHtml(e.exam_type)}
               </span>
             </td>
-            <td style="font-size:12px;color:var(--text3)">${e.term}</td>
+            <td style="font-size:12px;color:var(--text3)">${escapeHtml(e.term)}</td>
             <td style="font-family:'JetBrains Mono';font-size:12px">
               ${e.exam_date ? formatDate(e.exam_date) : '<span style="color:var(--text3)">Not set</span>'}
             </td>
-            <td style="font-size:12px;text-align:center">${e.max_score}</td>
+            <td style="font-size:12px;text-align:center">${escapeHtml(e.max_score)}</td>
             <td style="text-align:center">
               <span class="badge ${parseInt(e.grades_entered)>0?'badge-green':'badge-gray'}">
-                ${e.grades_entered}
+                ${escapeHtml(e.grades_entered)}
               </span>
             </td>
             <td>
-              <button class="btn btn-danger btn-sm" onclick="cancelExam('${e.id}','${e.name}')">
+              <button class="btn btn-danger btn-sm" onclick="cancelExam(${escapeHtml(JSON.stringify(e.id))},${escapeHtml(JSON.stringify(e.name))})">
                 Cancel
               </button>
             </td>
@@ -526,11 +528,11 @@
             <div class="exam-date-month">${mon}</div>
           </div>
           <div class="exam-details">
-            <div class="exam-name">${e.name}</div>
+            <div class="exam-name">${escapeHtml(e.name)}</div>
             <div class="exam-meta">
-              ${e.class_name||'—'} &nbsp;·&nbsp; ${e.subject_name||'—'} &nbsp;·&nbsp;
-              <span style="text-transform:capitalize">${e.exam_type}</span> &nbsp;·&nbsp;
-              ${e.term} &nbsp;·&nbsp; Max: ${e.max_score}
+              ${escapeHtml(e.class_name||'—')} &nbsp;·&nbsp; ${escapeHtml(e.subject_name||'—')} &nbsp;·&nbsp;
+              <span style="text-transform:capitalize">${escapeHtml(e.exam_type)}</span> &nbsp;·&nbsp;
+              ${escapeHtml(e.term)} &nbsp;·&nbsp; Max: ${escapeHtml(e.max_score)}
             </div>
           </div>
           <span class="days-badge ${urgClass}">${urgLabel}</span>
@@ -562,13 +564,13 @@
         allClasses = res.data;
         const sel = document.getElementById('ex_class');
         allClasses.forEach(c => {
-          sel.innerHTML += `<option value="${c.id}">${c.name}</option>`;
+          sel.innerHTML += `<option value="${escapeHtml(c.id)}">${escapeHtml(c.name)}</option>`;
         });
         // Also populate list filter
         const listSel = document.getElementById('listClass');
         listSel.innerHTML = '<option value="">All Classes</option>';
         allClasses.forEach(c => {
-          listSel.innerHTML += `<option value="${c.id}">${c.name}</option>`;
+          listSel.innerHTML += `<option value="${escapeHtml(c.id)}">${escapeHtml(c.name)}</option>`;
         });
       }
     }
@@ -578,7 +580,7 @@
         allSubjects = res.data;
         const sel = document.getElementById('ex_subject');
         allSubjects.forEach(s => {
-          sel.innerHTML += `<option value="${s.id}">${s.name} (${s.code})</option>`;
+          sel.innerHTML += `<option value="${escapeHtml(s.id)}">${escapeHtml(s.name)} (${escapeHtml(s.code)})</option>`;
         });
       }
     }

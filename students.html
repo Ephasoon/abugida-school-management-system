@@ -175,6 +175,8 @@
   </div>
 </div>
 
+<script src="assets/js/config.js"></script>
+<script src="assets/js/escape.js"></script>
 <script src="assets/js/api.js"></script>
 <script>
   requireAuth();
@@ -231,15 +233,15 @@
 
     document.getElementById('studentsBody').innerHTML = students.map(s => `
       <tr>
-        <td style="font-family:'JetBrains Mono';font-size:11px;color:var(--text3)">${s.student_number}</td>
-        <td class="primary">${s.first_name} ${s.last_name}${s.fathers_name ? ' ' + s.fathers_name : ''}</td>
-        <td>${s.gender === 'male' ? '♂' : '♀'} ${s.gender}</td>
-        <td>${s.class_name || '<span style="color:var(--text3)">—</span>'}</td>
-        <td style="font-size:12px">${s.phone || '—'}</td>
+        <td style="font-family:'JetBrains Mono';font-size:11px;color:var(--text3)">${escapeHtml(s.student_number)}</td>
+        <td class="primary">${escapeHtml(s.first_name)} ${escapeHtml(s.last_name)}${s.fathers_name ? ' ' + escapeHtml(s.fathers_name) : ''}</td>
+        <td>${s.gender === 'male' ? '♂' : '♀'} ${escapeHtml(s.gender)}</td>
+        <td>${s.class_name ? escapeHtml(s.class_name) : '<span style="color:var(--text3)">—</span>'}</td>
+        <td style="font-size:12px">${escapeHtml(s.phone || '—')}</td>
         <td>${statusBadge(s.status)}</td>
         <td style="font-size:12px;color:var(--text3)">${formatDate(s.enrollment_date)}</td>
         <td>
-          <button class="btn btn-ghost btn-sm" onclick="viewStudent('${s.id}')">View</button>
+          <button class="btn btn-ghost btn-sm" onclick="viewStudent(${escapeHtml(JSON.stringify(s.id))})">View</button>
         </td>
       </tr>
     `).join('');
@@ -268,7 +270,7 @@
       const res = await api.get('/timetable/classes');
       if (res?.success) {
         res.data.forEach(c => {
-          sel.innerHTML += `<option value="${c.id}">${c.name}</option>`;
+          sel.innerHTML += `<option value="${escapeHtml(c.id)}">${escapeHtml(c.name)}</option>`;
         });
       }
     }
