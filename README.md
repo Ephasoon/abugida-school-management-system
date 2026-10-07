@@ -1,4 +1,4 @@
-\# Abugida School Management System — Frontend
+# Abugida School Management System — Frontend
 
 
 
@@ -6,21 +6,21 @@
 
 
 
-\*\*Development Status:\*\* 🚧 Active Development — approximately 55% complete  
+**Development Status:** 🚧 Active Development — approximately 55% complete  
 
-\*\*Version:\*\* 0.1.0  
+**Version:** 0.1.0  
 
-\*\*Frontend:\*\* HTML5 + CSS3 + JavaScript
+**Frontend:** HTML5 + CSS3 + JavaScript
 
 
 
-\---
+---
 
 ███████████░░░░░░░░░ 55%
 
 
 
-\## 📌 Overview
+## 📌 Overview
 
 
 
@@ -36,11 +36,11 @@ The project is currently under active development. Features, layouts, components
 
 
 
-\---
+---
 
 
 
-\## ✨ Current Modules
+## ✨ Current Modules
 
 
 
@@ -48,35 +48,35 @@ The current frontend includes interfaces for:
 
 
 
-\- Login
+- Login
 
-\- Admin dashboard
+- Admin dashboard
 
-\- Parent dashboard
+- Parent dashboard
 
-\- Student management
+- Student management
 
-\- Student details
+- Student details
 
-\- Teacher management
+- Teacher management
 
-\- Academic years
+- Academic years
 
-\- Attendance
+- Attendance
 
-\- Grades
+- Grades
 
-\- Examination schedules
+- Examination schedules
 
-\- Finance
+- Finance
 
-\- Timetable
+- Timetable
 
-\- Documents
+- Documents
 
-\- Analytics
+- Analytics
 
-\- Parent portal
+- Parent portal
 
 
 
@@ -84,11 +84,11 @@ Additional functionality and improvements are being developed continuously.
 
 
 
-\---
+---
 
 
 
-\## 🏗️ Frontend Architecture
+## 🏗️ Frontend Architecture
 
 
 
@@ -100,29 +100,29 @@ The frontend currently follows a lightweight modular structure:
 
 Browser
 
-&#x20;  │
+   │
 
-&#x20;  ▼
+   ▼
 
 HTML Pages
 
-&#x20;  │
+   │
 
-&#x20;  ├── CSS
+   ├── CSS
 
-&#x20;  │
+   │
 
-&#x20;  └── JavaScript
+   └── JavaScript
 
-&#x20;         │
+          │
 
-&#x20;         ▼
+          ▼
 
-&#x20;      API Layer
+       API Layer
 
-&#x20;         │
+          │
 
-&#x20;         ▼
+          ▼
 
 ASMS Backend REST API
 
