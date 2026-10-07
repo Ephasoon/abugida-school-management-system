@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ASMS — Class Assignments</title>
+<link rel="stylesheet" href="assets/css/main.css">
+</head>
+<body>
+
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-icon">🎓</div>
+    <div class="logo-text">
+      <div class="name">ASMS</div>
+      <span class="sub">አቡጊዳ ትምህርት ቤት</span>
+    </div>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-section">Overview</div>
+    <a href="dashboard.html" class="nav-item"><span class="nav-icon">📊</span> Dashboard</a>
+    <div class="nav-section">Academic</div>
+    <a href="students.html" class="nav-item"><span class="nav-icon">👨‍🎓</span> Students</a>
+    <a href="teachers.html" class="nav-item active"><span class="nav-icon">👩‍🏫</span> Teachers</a>
+    <a href="attendance.html" class="nav-item"><span class="nav-icon">📅</span> Attendance</a>
+    <a href="grades.html" class="nav-item"><span class="nav-icon">📝</span> Grades & Exams</a>
+    <div class="nav-section">Operations</div>
+    <a href="finance.html" class="nav-item"><span class="nav-icon">💰</span> Finance</a>
+  </nav>
+  <div class="sidebar-footer">
+    <div class="user-card" onclick="logout()">
+      <div class="user-avatar" id="userInitials">AD</div>
+      <div>
+        <div class="user-name" id="userName">Administrator</div>
+        <div class="user-role" id="userRole">Admin</div>
+      </div>
+      <span style="margin-left:auto;color:var(--text3);font-size:11px">↪</span>
+    </div>
+  </div>
+</aside>
+
+<main class="main">
+  <div class="topbar">
+    <div class="page-title">
+      Class Assignments
+      <span class="sub">የክፍል ምደባ</span>
+    </div>
+    <a class="btn btn-ghost" href="teachers.html">← Teachers</a>
+  </div>
+
+  <div class="content">
+
+    <div id="adminOnlyNotice" class="panel" style="display:none">
+      <div class="panel-body">
+        <div class="empty-state"><p>Only administrators can manage class assignments.</p></div>
+      </div>
+    </div>
+
+    <div id="assignmentArea">
+      <!-- Assign form -->
+      <div class="panel" style="margin-bottom:20px">
+        <div class="panel-header">
+          <div class="panel-title">➕ Assign a teacher to a class and subject</div>
+        </div>
+        <div class="panel-body">
+          <div style="font-size:12px;color:var(--text3);margin-bottom:14px">
+            Teachers can only create exams and enter grades for the class + subject pairs assigned here.
+          </div>
+          <div class="form-grid" style="grid-template-columns:repeat(3,1fr)">
+            <div class="form-group">
+              <label class="form-label" for="a_teacher">Teacher</label>
+              <select class="form-control" id="a_teacher"><option value="">Loading...</option></select>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="a_class">Class</label>
+              <select class="form-control" id="a_class"><option value="">Loading...</option></select>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="a_subject">Subject</label>
+              <select class="form-control" id="a_subject"><option value="">Loading...</option></select>
+            </div>
+          </div>
+          <div style="display:flex;justify-content:flex-end;margin-top:14px">
+            <button class="btn btn-primary" id="assignBtn" onclick="assign()">Assign</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Current assignments -->
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title">🏫 Current assignments</div>
+          <div style="font-size:12px;color:var(--text3)" id="assignmentCount"></div>
+        </div>
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Teacher</th>
+                <th>Class</th>
+                <th>Subject</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="assignmentsBody">
+              <tr><td colspan="4">
+                <div class="loading-state"><div class="spinner"></div> Loading assignments...</div>
+              </td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<script src="assets/js/config.js"></script>
+<script src="assets/js/escape.js"></script>
+<script src="assets/js/api.js"></script>
+<script>
+  requireAuth();
+
+  const user = getUser();
+  if (user) {
+    document.getElementById('userName').textContent     = user.email.split('@')[0];
+    document.getElementById('userRole').textContent     = user.role;
+    document.getElementById('userInitials').textContent = user.email[0].toUpperCase();
+  }
+
+  // ── Fill a <select> from API rows ────────────────────────
+  function fillSelect(id, rows, label, placeholder) {
+    document.getElementById(id).innerHTML =
+      `<option value="">${escapeHtml(placeholder)}</option>` +
+      rows.map(r => `<option value="${escapeHtml(r.id)}">${escapeHtml(label(r))}</option>`).join('');
+  }
+
+  // ── Load dropdowns ───────────────────────────────────────
+  async function loadOptions() {
+    const [teachers, classes, subjects] = await Promise.all([
+      api.get('/teachers'),
+      api.get('/timetable/classes'),
+      api.get('/teachers/subjects'),
+    ]);
+    if (!teachers?.success || !classes?.success || !subjects?.success) {
+      showToast('Failed to load teachers, classes or subjects.', 'error');
+      return [];
+    }
+    fillSelect('a_teacher', teachers.data,
+      t => `${t.first_name} ${t.last_name} (${t.teacher_number})`, 'Select a teacher');
+    fillSelect('a_class', classes.data,
+      c => `${c.name} — Grade ${c.grade_level}${c.section}`, 'Select a class');
+    fillSelect('a_subject', subjects.data,
+      s => `${s.name} (${s.code})`, 'Select a subject');
+    return teachers.data;
+  }
+
+  // ── Load current assignments (one request per teacher) ───
+  async function loadAssignments(teachers) {
+    const body = document.getElementById('assignmentsBody');
+    const details = await Promise.all(teachers.map(t => api.get(`/teachers/${t.id}`)));
+
+    const rows = [];
+    details.forEach((res, i) => {
+      if (!res?.success) return;
+      const t = teachers[i];
+      (res.data.classes || []).forEach(c => rows.push({
+        teacherId:   t.id,
+        teacherName: `${t.first_name} ${t.last_name} (${t.teacher_number})`,
+        classId:     c.id,
+        className:   c.name,
+        subjectId:   c.subject_id,
+        subjectName: c.subject_name,
+      }));
+    });
+
+    document.getElementById('assignmentCount').textContent = `${rows.length} assignment(s)`;
+
+    body.innerHTML = rows.length
+      ? rows.map(r => `
+        <tr>
+          <td class="primary">${escapeHtml(r.teacherName)}</td>
+          <td>${escapeHtml(r.className)}</td>
+          <td>${escapeHtml(r.subjectName)}</td>
+          <td>
+            <button class="btn btn-danger btn-sm"
+              onclick="removeAssignment(${escapeHtml(JSON.stringify(r))})">Remove</button>
+          </td>
+        </tr>`).join('')
+      : `<tr><td colspan="4"><div class="empty-state"><div class="empty-icon">🏫</div>
+          <p>No assignments yet. Teachers cannot create exams or enter grades until they are assigned.</p>
+        </div></td></tr>`;
+  }
+
+  async function reload() {
+    const teachers = await loadOptions();
+    await loadAssignments(teachers);
+  }
+
+  // ── Assign ───────────────────────────────────────────────
+  async function assign() {
+    const teacherId = document.getElementById('a_teacher').value;
+    const class_id  = document.getElementById('a_class').value;
+    const subject_id = document.getElementById('a_subject').value;
+    if (!teacherId || !class_id || !subject_id) {
+      showToast('Choose a teacher, a class and a subject.', 'error');
+      return;
+    }
+
+    const btn = document.getElementById('assignBtn');
+    btn.disabled = true; btn.textContent = 'Assigning...';
+    const res = await api.post(`/teachers/${encodeURIComponent(teacherId)}/classes`, { class_id, subject_id });
+    btn.disabled = false; btn.textContent = 'Assign';
+
+    if (res?.success) {
+      showToast('Teacher assigned.', 'success');
+      const teachers = await api.get('/teachers');
+      if (teachers?.success) await loadAssignments(teachers.data);
+    } else {
+      showToast(res?.message || 'Failed to assign teacher.', 'error');
+    }
+  }
+
+  // ── Remove ───────────────────────────────────────────────
+  async function removeAssignment(r) {
+    if (!confirm(`Remove ${r.teacherName} from ${r.className} — ${r.subjectName}?`)) return;
+    const path = [r.teacherId, 'classes', r.classId, r.subjectId].map(encodeURIComponent).join('/');
+    const res = await api.delete(`/teachers/${path}`);
+    if (res?.success) {
+      showToast('Assignment removed.', 'success');
+      const teachers = await api.get('/teachers');
+      if (teachers?.success) await loadAssignments(teachers.data);
+    } else {
+      showToast(res?.message || 'Failed to remove assignment.', 'error');
+    }
+  }
+
+  // ── Start (admins only; the API enforces this too) ───────
+  if (user?.role !== 'admin') {
+    document.getElementById('assignmentArea').style.display = 'none';
+    document.getElementById('adminOnlyNotice').style.display = '';
+  } else {
+    reload();
+  }
+</script>
+</body>
+</html>
