@@ -136,6 +136,8 @@
   </div>
 </main>
 
+<script src="assets/js/config.js"></script>
+<script src="assets/js/escape.js"></script>
 <script src="assets/js/api.js"></script>
 <script>
   requireAuth();
@@ -171,21 +173,21 @@
 
   function renderAttendanceTable() {
     document.getElementById('attendanceBody').innerHTML = students.map(s => `
-      <tr id="row-${s.id}">
-        <td class="primary">${s.first_name} ${s.last_name}</td>
-        <td style="font-size:11px;color:var(--text3);font-family:'JetBrains Mono'">${s.student_number}</td>
+      <tr id="row-${escapeHtml(s.id)}">
+        <td class="primary">${escapeHtml(s.first_name)} ${escapeHtml(s.last_name)}</td>
+        <td style="font-size:11px;color:var(--text3);font-family:'JetBrains Mono'">${escapeHtml(s.student_number)}</td>
         <td style="text-align:center">
-          <input type="radio" name="att-${s.id}" value="present"
+          <input type="radio" name="att-${escapeHtml(s.id)}" value="present"
             onchange="updateCount()" checked
             style="accent-color:var(--green);width:16px;height:16px;cursor:pointer">
         </td>
         <td style="text-align:center">
-          <input type="radio" name="att-${s.id}" value="absent"
+          <input type="radio" name="att-${escapeHtml(s.id)}" value="absent"
             onchange="updateCount()"
             style="accent-color:var(--red);width:16px;height:16px;cursor:pointer">
         </td>
         <td style="text-align:center">
-          <input type="radio" name="att-${s.id}" value="late"
+          <input type="radio" name="att-${escapeHtml(s.id)}" value="late"
             onchange="updateCount()"
             style="accent-color:var(--gold);width:16px;height:16px;cursor:pointer">
         </td>
@@ -269,19 +271,19 @@
     document.getElementById('historyResult').innerHTML = `
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">
         <div style="background:var(--bg3);border-radius:8px;padding:12px;text-align:center">
-          <div style="font-size:20px;font-weight:800;color:var(--green)">${stats.attendance_rate || 0}%</div>
+          <div style="font-size:20px;font-weight:800;color:var(--green)">${escapeHtml(stats.attendance_rate || 0)}%</div>
           <div style="font-size:11px;color:var(--text3)">Rate</div>
         </div>
         <div style="background:var(--bg3);border-radius:8px;padding:12px;text-align:center">
-          <div style="font-size:20px;font-weight:800;color:var(--text)">${stats.total_days}</div>
+          <div style="font-size:20px;font-weight:800;color:var(--text)">${escapeHtml(stats.total_days)}</div>
           <div style="font-size:11px;color:var(--text3)">Total Days</div>
         </div>
         <div style="background:var(--bg3);border-radius:8px;padding:8px;text-align:center">
-          <div style="font-size:16px;font-weight:700;color:var(--green)">${stats.present}</div>
+          <div style="font-size:16px;font-weight:700;color:var(--green)">${escapeHtml(stats.present)}</div>
           <div style="font-size:10px;color:var(--text3)">Present</div>
         </div>
         <div style="background:var(--bg3);border-radius:8px;padding:8px;text-align:center">
-          <div style="font-size:16px;font-weight:700;color:var(--red)">${stats.absent}</div>
+          <div style="font-size:16px;font-weight:700;color:var(--red)">${escapeHtml(stats.absent)}</div>
           <div style="font-size:10px;color:var(--text3)">Absent</div>
         </div>
       </div>

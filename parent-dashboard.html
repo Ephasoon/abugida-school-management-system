@@ -261,8 +261,10 @@
 
 </div>
 
+<script src="assets/js/config.js"></script>
+<script src="assets/js/escape.js"></script>
 <script>
-  const API   = 'http://localhost:3000/api';
+  const API   = window.ASMS_CONFIG.API_BASE;
   const token = localStorage.getItem('parent_token');
   const pUser = JSON.parse(localStorage.getItem('parent_user')||'null');
   if (!token) window.location.href = 'parent-login.html';
@@ -288,7 +290,7 @@
   function formatETB(n){return `ETB ${parseFloat(n||0).toLocaleString('en-ET',{minimumFractionDigits:2,maximumFractionDigits:2})}`;}
   function fmtDate(d){if(!d)return'—';return new Date(d).toLocaleDateString('en-ET',{year:'numeric',month:'short',day:'numeric'});}
   function gradeClass(l){if(!l)return'bb';if(l.startsWith('A'))return'bg';if(l.startsWith('B'))return'bb';if(l.startsWith('C'))return'bo';return'br';}
-  function sBadge(s){const m={paid:'bg',unpaid:'br',partial:'bo',present:'bg',absent:'br',late:'bo'};return`<span class="badge ${m[s]||'bb'}">${s}</span>`;}
+  function sBadge(s){const m={paid:'bg',unpaid:'br',partial:'bo',present:'bg',absent:'br',late:'bo'};return`<span class="badge ${m[s]||'bb'}">${escapeHtml(s)}</span>`;}
 
   function showTab(tab){
     activeTab=tab;
@@ -326,9 +328,9 @@
     if(children.length>1){
       document.getElementById('childBar').style.display='block';
       document.getElementById('childTabs').innerHTML=children.map((c,i)=>`
-        <button class="child-tab ${i===0?'active':''}" onclick="selectChild('${c.id}',this)">
-          <div class="child-avatar">${c.first_name[0]}${c.last_name[0]}</div>
-          ${c.first_name} ${c.last_name}
+        <button class="child-tab ${i===0?'active':''}" onclick="selectChild(${escapeHtml(JSON.stringify(c.id))},this)">
+          <div class="child-avatar">${escapeHtml(c.first_name[0])}${escapeHtml(c.last_name[0])}</div>
+          ${escapeHtml(c.first_name)} ${escapeHtml(c.last_name)}
         </button>`).join('');
     }
     selectChild(children[0].id,null);
@@ -349,17 +351,17 @@
 
     document.getElementById('heroArea').innerHTML=`
       <div class="hero">
-        <div class="hero-av">${s.first_name[0]}${s.last_name[0]}</div>
+        <div class="hero-av">${escapeHtml(s.first_name[0])}${escapeHtml(s.last_name[0])}</div>
         <div>
-          <div class="hero-name">${s.first_name} ${s.last_name}${s.fathers_name?' '+s.fathers_name:''}</div>
+          <div class="hero-name">${escapeHtml(s.first_name)} ${escapeHtml(s.last_name)}${s.fathers_name?' '+escapeHtml(s.fathers_name):''}</div>
           <div class="hero-info">
-            Class: <strong style="color:var(--text)">${s.class_name||'Not assigned'}</strong><br>
-            Grade: <strong style="color:var(--text)">${s.grade_level||'—'}</strong> &nbsp;|&nbsp;
-            Section: <strong style="color:var(--text)">${s.section||'—'}</strong><br>
-            Year: <strong style="color:var(--text)">${s.academic_year||'2024/2025'}</strong> &nbsp;|&nbsp;
+            Class: <strong style="color:var(--text)">${escapeHtml(s.class_name||'Not assigned')}</strong><br>
+            Grade: <strong style="color:var(--text)">${escapeHtml(s.grade_level||'—')}</strong> &nbsp;|&nbsp;
+            Section: <strong style="color:var(--text)">${escapeHtml(s.section||'—')}</strong><br>
+            Year: <strong style="color:var(--text)">${escapeHtml(s.academic_year||'2024/2025')}</strong> &nbsp;|&nbsp;
             Status: ${sBadge(s.status)}
           </div>
-          <div class="hero-id">${s.student_number}</div>
+          <div class="hero-id">${escapeHtml(s.student_number)}</div>
         </div>
       </div>`;
 
@@ -372,10 +374,10 @@
     document.getElementById('recentPanel').style.display='block';
     document.getElementById('recentGrades').innerHTML=rg?.length>0
       ?rg.map(g=>`<tr>
-          <td class="primary">${g.subject}</td>
-          <td style="font-size:12px">${g.exam_name||g.exam_type}</td>
-          <td style="font-family:'JetBrains Mono';font-size:12px">${g.score}/${g.max_score}</td>
-          <td><span class="badge ${gradeClass(g.grade_letter)}">${g.grade_letter||'—'}</span></td>
+          <td class="primary">${escapeHtml(g.subject)}</td>
+          <td style="font-size:12px">${escapeHtml(g.exam_name||g.exam_type)}</td>
+          <td style="font-family:'JetBrains Mono';font-size:12px">${escapeHtml(g.score)}/${escapeHtml(g.max_score)}</td>
+          <td><span class="badge ${gradeClass(g.grade_letter)}">${escapeHtml(g.grade_letter||'—')}</span></td>
         </tr>`).join('')
       :`<tr><td colspan="4"><div class="empty"><p>No grades yet</p></div></td></tr>`;
 
@@ -394,7 +396,7 @@
         border:1px solid var(--border2);border-radius:var(--radius);
         padding:20px;margin-bottom:20px;text-align:center">
         <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Overall GPA</div>
-        <div style="font-size:42px;font-weight:800;color:var(--gold)">${gpa}</div>
+        <div style="font-size:42px;font-weight:800;color:var(--gold)">${escapeHtml(gpa)}</div>
         <div style="font-size:12px;color:var(--text3);margin-top:4px">
           ${parseFloat(gpa)>=3.7?'Excellent 🌟':parseFloat(gpa)>=3.0?'Good 👍':parseFloat(gpa)>=2.0?'Average':'Needs Improvement'}
         </div>
@@ -403,18 +405,18 @@
         ?by_subject.map(sub=>`
             <div class="sub-block">
               <div class="sub-header">
-                <div class="sub-name">${sub.subject}</div>
+                <div class="sub-name">${escapeHtml(sub.subject)}</div>
                 ${sub.exams?.length>0?`<span class="badge ${gradeClass(sub.exams[0]?.grade_letter)}" style="font-size:13px;padding:4px 12px">
-                  ${sub.exams[0]?.grade_letter||'—'}</span>`:''}
+                  ${escapeHtml(sub.exams[0]?.grade_letter||'—')}</span>`:''}
               </div>
               <table><thead><tr><th>Exam</th><th>Type</th><th>Term</th><th>Score</th><th>%</th><th>Grade</th></tr></thead>
               <tbody>${sub.exams?.map(e=>`<tr>
-                <td class="primary">${e.exam_name||'Exam'}</td>
-                <td style="text-transform:capitalize;font-size:12px">${e.exam_type}</td>
-                <td style="font-size:12px;color:var(--text3)">${e.term}</td>
-                <td style="font-family:'JetBrains Mono';font-size:12px">${e.score}/${e.max_score}</td>
-                <td style="font-size:12px">${e.percentage}%</td>
-                <td><span class="badge ${gradeClass(e.grade_letter)}">${e.grade_letter||'—'}</span></td>
+                <td class="primary">${escapeHtml(e.exam_name||'Exam')}</td>
+                <td style="text-transform:capitalize;font-size:12px">${escapeHtml(e.exam_type)}</td>
+                <td style="font-size:12px;color:var(--text3)">${escapeHtml(e.term)}</td>
+                <td style="font-family:'JetBrains Mono';font-size:12px">${escapeHtml(e.score)}/${escapeHtml(e.max_score)}</td>
+                <td style="font-size:12px">${escapeHtml(e.percentage)}%</td>
+                <td><span class="badge ${gradeClass(e.grade_letter)}">${escapeHtml(e.grade_letter||'—')}</span></td>
               </tr>`).join('')}</tbody></table>
             </div>`).join('')
         :'<div class="empty"><div class="empty-icon">📝</div><p>No grades recorded yet</p></div>'}`;
@@ -428,29 +430,29 @@
     document.getElementById('attArea').innerHTML=`
       <div class="stats-row" style="grid-template-columns:repeat(4,1fr)">
         <div class="stat-card gold"><div class="stat-icon">📊</div>
-          <div class="stat-val">${o?.rate||0}%</div><div class="stat-label">Rate</div></div>
+          <div class="stat-val">${escapeHtml(o?.rate||0)}%</div><div class="stat-label">Rate</div></div>
         <div class="stat-card green"><div class="stat-icon">✅</div>
-          <div class="stat-val">${o?.present||0}</div><div class="stat-label">Present</div></div>
+          <div class="stat-val">${escapeHtml(o?.present||0)}</div><div class="stat-label">Present</div></div>
         <div class="stat-card" style="border-color:rgba(252,129,129,0.2)">
           <div class="stat-icon">❌</div>
-          <div class="stat-val" style="color:var(--red)">${o?.absent||0}</div>
+          <div class="stat-val" style="color:var(--red)">${escapeHtml(o?.absent||0)}</div>
           <div class="stat-label">Absent</div></div>
         <div class="stat-card blue"><div class="stat-icon">⏰</div>
-          <div class="stat-val">${o?.late||0}</div><div class="stat-label">Late</div></div>
+          <div class="stat-val">${escapeHtml(o?.late||0)}</div><div class="stat-label">Late</div></div>
       </div>
       ${m?.length>0?`<div class="panel"><div class="panel-header"><div class="panel-title">📈 Monthly</div></div>
         <div class="panel-body">${m.map(mo=>`
           <div class="month-bar">
-            <div class="month-label">${mo.month}</div>
-            <div class="month-track"><div class="month-fill" style="width:${mo.rate||0}%"></div></div>
-            <div class="month-rate">${mo.rate||0}%</div>
+            <div class="month-label">${escapeHtml(mo.month)}</div>
+            <div class="month-track"><div class="month-fill" style="width:${parseFloat(mo.rate)||0}%"></div></div>
+            <div class="month-rate">${escapeHtml(mo.rate||0)}%</div>
           </div>`).join('')}</div></div>`:''}
       ${r?.length>0?`<div class="panel"><div class="panel-header"><div class="panel-title">📋 Recent</div></div>
         <table><thead><tr><th>Date</th><th>Status</th><th>Note</th></tr></thead>
         <tbody>${r.map(rec=>`<tr>
           <td style="font-family:'JetBrains Mono';font-size:12px">${fmtDate(rec.date)}</td>
           <td>${sBadge(rec.status)}</td>
-          <td style="font-size:12px;color:var(--text3)">${rec.note||'—'}</td>
+          <td style="font-size:12px;color:var(--text3)">${escapeHtml(rec.note||'—')}</td>
         </tr>`).join('')}</tbody></table></div>`
       :'<div class="empty"><div class="empty-icon">📅</div><p>No attendance records yet</p></div>'}`;
   }
@@ -478,13 +480,13 @@
       ${p?.length>0?`<div class="panel"><div class="panel-header"><div class="panel-title">💳 Payment History</div></div>
         <table><thead><tr><th>Term</th><th>Category</th><th>Due</th><th>Paid</th><th>Method</th><th>Date</th><th>Receipt</th></tr></thead>
         <tbody>${p.map(pay=>`<tr>
-          <td style="font-size:12px">${pay.term}</td>
-          <td style="text-transform:capitalize;font-size:12px">${pay.category}</td>
+          <td style="font-size:12px">${escapeHtml(pay.term)}</td>
+          <td style="text-transform:capitalize;font-size:12px">${escapeHtml(pay.category)}</td>
           <td style="font-family:'JetBrains Mono';font-size:12px">${formatETB(pay.amount_due)}</td>
           <td style="font-family:'JetBrains Mono';font-size:12px;color:var(--green)">${formatETB(pay.amount_paid)}</td>
-          <td style="font-size:12px;text-transform:capitalize">${(pay.payment_method||'').replace('_',' ')}</td>
+          <td style="font-size:12px;text-transform:capitalize">${escapeHtml((pay.payment_method||'').replace('_',' '))}</td>
           <td style="font-size:12px;color:var(--text3)">${fmtDate(pay.payment_date)}</td>
-          <td style="font-family:'JetBrains Mono';font-size:10px;color:var(--text3)">${pay.receipt_number||'—'}</td>
+          <td style="font-family:'JetBrains Mono';font-size:10px;color:var(--text3)">${escapeHtml(pay.receipt_number||'—')}</td>
         </tr>`).join('')}</tbody></table></div>`
       :'<div class="empty"><div class="empty-icon">💳</div><p>No payment records yet</p></div>'}`;
   }
@@ -501,13 +503,13 @@
       const slots=by_day[day]||[];
       if(!slots.length)return'';
       return`<div class="tt-day">
-        <div class="tt-day-name">${day}</div>
+        <div class="tt-day-name">${escapeHtml(day)}</div>
         ${slots.map(s=>`<div class="tt-slot">
-          <div class="tt-time">${(s.start_time||'').substring(0,5)} – ${(s.end_time||'').substring(0,5)}</div>
-          <div><div class="tt-subj">${s.subject||'—'}</div>
-            ${s.room?`<div style="font-size:10px;color:var(--gold)">📍 ${s.room}</div>`:''}
+          <div class="tt-time">${escapeHtml((s.start_time||'').substring(0,5))} – ${escapeHtml((s.end_time||'').substring(0,5))}</div>
+          <div><div class="tt-subj">${escapeHtml(s.subject||'—')}</div>
+            ${s.room?`<div style="font-size:10px;color:var(--gold)">📍 ${escapeHtml(s.room)}</div>`:''}
           </div>
-          <div class="tt-teach">${s.teacher||'No teacher'}</div>
+          <div class="tt-teach">${escapeHtml(s.teacher||'No teacher')}</div>
         </div>`).join('')}
       </div>`;
     }).join('');

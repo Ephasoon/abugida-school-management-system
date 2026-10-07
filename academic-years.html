@@ -178,6 +178,8 @@
   </div>
 </div>
 
+<script src="assets/js/config.js"></script>
+<script src="assets/js/escape.js"></script>
 <script src="assets/js/api.js"></script>
 <script>
   requireAuth();
@@ -213,11 +215,11 @@
         <div>
           <div style="font-size:11px;color:var(--text3);text-transform:uppercase;
             letter-spacing:1px;margin-bottom:4px">Current Academic Year</div>
-          <div style="font-size:26px;font-weight:800;color:var(--gold)">${cur.name}</div>
+          <div style="font-size:26px;font-weight:800;color:var(--gold)">${escapeHtml(cur.name)}</div>
           <div style="font-size:12px;color:var(--text2);margin-top:4px">
             ${fmtDate(cur.start_date)} → ${fmtDate(cur.end_date)} &nbsp;|&nbsp;
-            <strong style="color:var(--text)">${cur.class_count}</strong> classes &nbsp;|&nbsp;
-            <strong style="color:var(--text)">${cur.student_count}</strong> students
+            <strong style="color:var(--text)">${escapeHtml(cur.class_count)}</strong> classes &nbsp;|&nbsp;
+            <strong style="color:var(--text)">${escapeHtml(cur.student_count)}</strong> students
           </div>
         </div>
         <div style="margin-left:auto">
@@ -233,19 +235,19 @@
     document.getElementById('yearsBody').innerHTML = allYears.length
       ? allYears.map(y=>`
           <tr>
-            <td class="primary" style="font-size:16px;font-weight:800">${y.name}</td>
+            <td class="primary" style="font-size:16px;font-weight:800">${escapeHtml(y.name)}</td>
             <td style="font-size:12px;color:var(--text2)">${fmtDate(y.start_date)}</td>
             <td style="font-size:12px;color:var(--text2)">${fmtDate(y.end_date)}</td>
-            <td><span class="badge badge-blue">${y.class_count||0}</span></td>
-            <td><span class="badge badge-gold">${y.student_count||0}</span></td>
+            <td><span class="badge badge-blue">${escapeHtml(y.class_count||0)}</span></td>
+            <td><span class="badge badge-gold">${escapeHtml(y.student_count||0)}</span></td>
             <td>${y.is_current
               ?'<span class="badge badge-green">✓ Current</span>'
               :'<span class="badge badge-gray">Inactive</span>'}</td>
             <td>
               <div style="display:flex;gap:6px;flex-wrap:wrap">
-                <button class="btn btn-ghost btn-sm" onclick="viewStats('${y.id}','${y.name}')">📊 Stats</button>
-                ${!y.is_current?`<button class="btn btn-success btn-sm" onclick="setActive('${y.id}','${y.name}')">✓ Activate</button>`:''}
-                <button class="btn btn-ghost btn-sm" onclick="openPromoteModal('${y.id}','${y.name}')">🎓 Promote</button>
+                <button class="btn btn-ghost btn-sm" onclick="viewStats(${escapeHtml(JSON.stringify(y.id))},${escapeHtml(JSON.stringify(y.name))})">📊 Stats</button>
+                ${!y.is_current?`<button class="btn btn-success btn-sm" onclick="setActive(${escapeHtml(JSON.stringify(y.id))},${escapeHtml(JSON.stringify(y.name))})">✓ Activate</button>`:''}
+                <button class="btn btn-ghost btn-sm" onclick="openPromoteModal(${escapeHtml(JSON.stringify(y.id))},${escapeHtml(JSON.stringify(y.name))})">🎓 Promote</button>
               </div>
             </td>
           </tr>`).join('')
@@ -278,7 +280,7 @@
           {label:'Teachers',val:t.total_teachers||0,color:'var(--purple)'},
           {label:'Exams',val:e?.total_exams||0,color:'var(--green)'},
         ].map(s=>`<div style="background:var(--bg3);border-radius:8px;padding:14px;text-align:center">
-          <div style="font-size:26px;font-weight:800;color:${s.color}">${s.val}</div>
+          <div style="font-size:26px;font-weight:800;color:${s.color}">${escapeHtml(s.val)}</div>
           <div style="font-size:11px;color:var(--text3)">${s.label}</div>
         </div>`).join('')}
       </div>
@@ -287,11 +289,11 @@
           <div style="font-size:11px;color:var(--text3);margin-bottom:8px">Gender</div>
           <div style="display:flex;gap:20px">
             <div style="text-align:center">
-              <div style="font-size:20px;font-weight:800;color:var(--blue)">${t.male_students||0}</div>
+              <div style="font-size:20px;font-weight:800;color:var(--blue)">${escapeHtml(t.male_students||0)}</div>
               <div style="font-size:10px;color:var(--text3)">♂ Male</div>
             </div>
             <div style="text-align:center">
-              <div style="font-size:20px;font-weight:800;color:var(--purple)">${t.female_students||0}</div>
+              <div style="font-size:20px;font-weight:800;color:var(--purple)">${escapeHtml(t.female_students||0)}</div>
               <div style="font-size:10px;color:var(--text3)">♀ Female</div>
             </div>
           </div>
@@ -300,20 +302,20 @@
           <div style="font-size:11px;color:var(--text3);margin-bottom:8px">Finance</div>
           <div style="font-size:13px;margin-bottom:4px">Collected: <strong style="color:var(--green)">${fmtETB(f?.total_collected||0)}</strong></div>
           <div style="font-size:13px">Expected: <strong style="color:var(--text)">${fmtETB(f?.total_expected||0)}</strong></div>
-          <div style="font-size:11px;color:var(--gold);margin-top:4px">${f?.collection_rate||0}% collected</div>
+          <div style="font-size:11px;color:var(--gold);margin-top:4px">${escapeHtml(f?.collection_rate||0)}% collected</div>
         </div>
       </div>
       <div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;
         letter-spacing:0.8px;margin-bottom:10px">Students by Grade</div>
       ${bg?.length>0?bg.map(g=>`
         <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px">
-          <div style="width:70px;font-size:12px;color:var(--text2)">Grade ${g.grade_level}</div>
+          <div style="width:70px;font-size:12px;color:var(--text2)">Grade ${escapeHtml(g.grade_level)}</div>
           <div style="flex:1;height:8px;background:var(--bg3);border-radius:4px;overflow:hidden">
             <div style="height:100%;background:var(--gold);border-radius:4px;
-              width:${bg.length>0?Math.min((g.student_count/Math.max(...bg.map(x=>parseInt(x.student_count)||1)))*100,100):0}%"></div>
+              width:${bg.length>0?Math.min((parseFloat(g.student_count)/Math.max(...bg.map(x=>parseInt(x.student_count)||1)))*100,100):0}%"></div>
           </div>
-          <div style="font-size:12px;font-weight:700;color:var(--text);width:28px;text-align:right">${g.student_count}</div>
-          <div style="font-size:11px;color:var(--text3);width:70px">${g.section_count} section(s)</div>
+          <div style="font-size:12px;font-weight:700;color:var(--text);width:28px;text-align:right">${escapeHtml(g.student_count)}</div>
+          <div style="font-size:11px;color:var(--text3);width:70px">${escapeHtml(g.section_count)} section(s)</div>
         </div>`).join(''):'<p style="color:var(--text3);font-size:12px">No data</p>'}`;
   }
 
@@ -348,7 +350,7 @@
     const sel=document.getElementById('pr_from');
     sel.innerHTML='<option value="">Select source year...</option>';
     allYears.filter(y=>y.id!==id).forEach(y=>{
-      sel.innerHTML+=`<option value="${y.id}" ${y.is_current?'selected':''}>${y.name}</option>`;
+      sel.innerHTML+=`<option value="${escapeHtml(y.id)}" ${y.is_current?'selected':''}>${escapeHtml(y.name)}</option>`;
     });
     document.getElementById('promoteModal').classList.add('open');
   }

@@ -207,6 +207,8 @@
   </div>
 </div>
 
+<script src="assets/js/config.js"></script>
+<script src="assets/js/escape.js"></script>
 <script src="assets/js/api.js"></script>
 <script>
   requireAuth();
@@ -245,9 +247,9 @@
               padding:10px 0;border-bottom:1px solid var(--border)">
               <div>
                 <div style="font-size:13px;font-weight:600;text-transform:capitalize">
-                  ${(m.payment_method||'').replace('_',' ')}
+                  ${escapeHtml((m.payment_method||'').replace('_',' '))}
                 </div>
-                <div style="font-size:11px;color:var(--text3)">${m.count} transaction(s)</div>
+                <div style="font-size:11px;color:var(--text3)">${escapeHtml(m.count)} transaction(s)</div>
               </div>
               <div style="font-size:13px;font-weight:700;color:var(--green)">
                 ${formatETB(m.total)}
@@ -264,9 +266,9 @@
       document.getElementById('paymentsBody').innerHTML = payments.length
         ? payments.map(p => `
             <tr>
-              <td class="primary">${p.student_name || '—'}</td>
-              <td style="text-transform:capitalize">${p.category || '—'}</td>
-              <td>${p.term || '—'}</td>
+              <td class="primary">${escapeHtml(p.student_name || '—')}</td>
+              <td style="text-transform:capitalize">${escapeHtml(p.category || '—')}</td>
+              <td>${escapeHtml(p.term || '—')}</td>
               <td style="font-family:'JetBrains Mono';font-size:12px">
                 ${formatETB(p.amount_due)}
               </td>
@@ -274,11 +276,11 @@
                 ${formatETB(p.amount_paid)}
               </td>
               <td style="text-transform:capitalize">
-                ${(p.payment_method||'').replace('_',' ')}
+                ${escapeHtml((p.payment_method||'').replace('_',' '))}
               </td>
               <td style="font-size:12px;color:var(--text3)">${formatDate(p.payment_date)}</td>
               <td style="font-family:'JetBrains Mono';font-size:11px;color:var(--text3)">
-                ${p.receipt_number || '—'}
+                ${escapeHtml(p.receipt_number || '—')}
               </td>
             </tr>`).join('')
         : `<tr><td colspan="8">
@@ -297,8 +299,8 @@
       document.getElementById('unpaidList').innerHTML = students.length
         ? students.map(s => `
             <tr>
-              <td class="primary">${s.name || s.full_name || '—'}</td>
-              <td style="font-size:12px">${s.class_name || '—'}</td>
+              <td class="primary">${escapeHtml(s.name || s.full_name || '—')}</td>
+              <td style="font-size:12px">${escapeHtml(s.class_name || '—')}</td>
               <td style="font-family:'JetBrains Mono';font-size:12px;color:var(--red)">
                 ${formatETB(s.balance)}
               </td>
@@ -323,8 +325,8 @@
       const res = await api.get('/students?limit=200&status=active');
       if (res?.success) {
         res.data.students.forEach(s => {
-          sel.innerHTML += `<option value="${s.id}">
-            ${s.first_name} ${s.last_name} (${s.student_number})
+          sel.innerHTML += `<option value="${escapeHtml(s.id)}">
+            ${escapeHtml(s.first_name)} ${escapeHtml(s.last_name)} (${escapeHtml(s.student_number)})
           </option>`;
         });
       }

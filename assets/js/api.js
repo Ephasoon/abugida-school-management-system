@@ -2,10 +2,12 @@
 // ============================================================
 // Central API service — all fetch calls go through here.
 // Automatically attaches the JWT token to every request.
-// Handles token expiry and redirects to login if needed.
+// On a 401 it refreshes the access token once (using the HTTP-only
+// refresh cookie) and retries; it logs out only if the refresh fails.
+// Requires assets/js/config.js and assets/js/escape.js to be loaded first.
 // ============================================================
 
-const API_BASE = 'http://localhost:3000/api';
+const API_BASE = window.ASMS_CONFIG.API_BASE;
 
 // ── Get stored token ─────────────────────────────────────────
 function getToken() {
@@ -35,40 +37,103 @@ function requireAuth() {
   return true;
 }
 
-// ── Logout ───────────────────────────────────────────────────
-function logout() {
+// ── Clear local session and go to the login page ─────────────
+function clearSessionAndRedirect() {
   localStorage.removeItem('asms_token');
   localStorage.removeItem('asms_user');
   window.location.href = 'login.html';
 }
 
-// ── Core fetch wrapper ───────────────────────────────────────
-async function apiFetch(endpoint, options = {}) {
-  const token = getToken();
+// ── Logout ───────────────────────────────────────────────────
+// Revokes the refresh token on the server, then clears local state.
+async function logout() {
+  try {
+    await fetch(`${API_BASE}/auth/logout`, { method: 'POST', credentials: 'include' });
+  } catch { /* offline: still clear the local session */ }
+  clearSessionAndRedirect();
+}
 
-  const headers = {
-    'Content-Type': 'application/json',
-    ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
-    ...(options.headers || {}),
+// ── Refresh the access token (single shared request) ─────────
+// Several requests can fail with 401 at the same moment; they all
+// await the same promise, so only ONE /auth/refresh call is made.
+let refreshPromise = null;
+
+function refreshAccessToken() {
+  if (!refreshPromise) {
+    refreshPromise = fetch(`${API_BASE}/auth/refresh`, {
+      method: 'POST',
+      credentials: 'include',   // sends the HTTP-only refreshToken cookie
+    })
+      .then(async res => {
+        const data = await res.json().catch(() => null);
+        if (res.ok && data?.success && data.data?.accessToken) {
+          localStorage.setItem('asms_token', data.data.accessToken);
+          return true;
+        }
+        return false;
+      })
+      .catch(() => false)
+      .finally(() => { refreshPromise = null; });
+  }
+  return refreshPromise;
+}
+
+// ── Password change required → dedicated page ────────────────
+async function redirectIfPasswordChangeRequired(res) {
+  if (res.status !== 403) return false;
+  const body = await res.clone().json().catch(() => null);
+  if (body?.errors?.code !== 'PASSWORD_CHANGE_REQUIRED') return false;
+  if (!window.location.pathname.endsWith('change-password.html')) {
+    window.location.href = 'change-password.html';
+  }
+  return true;
+}
+
+// ── Authenticated fetch returning the raw Response ───────────
+// Use directly for non-JSON responses (e.g. PDF downloads).
+// Returns null when the session is gone (the user is being logged out).
+async function authFetch(endpoint, options = {}) {
+  const send = () => {
+    const token = getToken();
+    return {
+      token,
+      request: fetch(`${API_BASE}${endpoint}`, {
+        ...options,
+        headers: {
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+          ...(options.headers || {}),
+        },
+        credentials: 'include',
+      }),
+    };
   };
 
-  try {
-    const res = await fetch(`${API_BASE}${endpoint}`, {
-      ...options,
-      headers,
-      credentials: 'include',
-    });
+  let { token: usedToken, request } = send();
+  let res = await request;
 
-    const data = await res.json();
-
-    // If token expired, redirect to login
-    if (res.status === 401) {
-      logout();
+  if (res.status === 401) {
+    // Another request may already have refreshed while this one was in flight
+    const refreshed = getToken() !== usedToken || await refreshAccessToken();
+    if (!refreshed) {
+      clearSessionAndRedirect();
       return null;
     }
+    res = await send().request;   // retry once with the new token
+  }
 
-    return data;
+  await redirectIfPasswordChangeRequired(res);
+  return res;
+}
 
+// ── Core fetch wrapper (JSON) ────────────────────────────────
+async function apiFetch(endpoint, options = {}) {
+  try {
+    const res = await authFetch(endpoint, {
+      ...options,
+      headers: { 'Content-Type': 'application/json', ...(options.headers || {}) },
+    });
+    if (!res) return null;   // logged out
+    return await res.json();
   } catch (err) {
     console.error('API Error:', err);
     return { success: false, message: 'Cannot connect to server.' };
@@ -112,7 +177,7 @@ function statusBadge(status) {
     PAID:     'badge-green',
     PARTIAL:  'badge-gold',
   };
-  return `<span class="badge ${map[status] || 'badge-gray'}">${status}</span>`;
+  return `<span class="badge ${map[status] || 'badge-gray'}">${escapeHtml(status)}</span>`;
 }
 
 // ── Show toast notification ───────────────────────────────────
