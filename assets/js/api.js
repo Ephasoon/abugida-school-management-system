@@ -9,15 +9,23 @@
 
 const API_BASE = window.ASMS_CONFIG.API_BASE;
 
+// ── Which session this page uses ─────────────────────────────
+// Staff pages use asms_token. The parent portal sets
+//   <script>window.ASMS_SESSION = 'parent';</script>
+// before loading this file, and keeps its own keys and login page.
+const SESSION = window.ASMS_SESSION === 'parent'
+  ? { tokenKey: 'parent_token', userKey: 'parent_user', loginPage: 'parent-login.html' }
+  : { tokenKey: 'asms_token',   userKey: 'asms_user',   loginPage: 'login.html' };
+
 // ── Get stored token ─────────────────────────────────────────
 function getToken() {
-  return localStorage.getItem('asms_token');
+  return localStorage.getItem(SESSION.tokenKey);
 }
 
 // ── Get stored user ──────────────────────────────────────────
 function getUser() {
   try {
-    return JSON.parse(localStorage.getItem('asms_user'));
+    return JSON.parse(localStorage.getItem(SESSION.userKey));
   } catch {
     return null;
   }
@@ -31,7 +39,7 @@ function isLoggedIn() {
 // ── Redirect to login if not authenticated ───────────────────
 function requireAuth() {
   if (!isLoggedIn()) {
-    window.location.href = 'login.html';
+    window.location.href = SESSION.loginPage;
     return false;
   }
   return true;
@@ -39,9 +47,9 @@ function requireAuth() {
 
 // ── Clear local session and go to the login page ─────────────
 function clearSessionAndRedirect() {
-  localStorage.removeItem('asms_token');
-  localStorage.removeItem('asms_user');
-  window.location.href = 'login.html';
+  localStorage.removeItem(SESSION.tokenKey);
+  localStorage.removeItem(SESSION.userKey);
+  window.location.href = SESSION.loginPage;
 }
 
 // ── Logout ───────────────────────────────────────────────────
@@ -67,7 +75,7 @@ function refreshAccessToken() {
       .then(async res => {
         const data = await res.json().catch(() => null);
         if (res.ok && data?.success && data.data?.accessToken) {
-          localStorage.setItem('asms_token', data.data.accessToken);
+          localStorage.setItem(SESSION.tokenKey, data.data.accessToken);
           return true;
         }
         return false;
@@ -84,7 +92,7 @@ async function redirectIfPasswordChangeRequired(res) {
   const body = await res.clone().json().catch(() => null);
   if (body?.errors?.code !== 'PASSWORD_CHANGE_REQUIRED') return false;
   if (!window.location.pathname.endsWith('change-password.html')) {
-    window.location.href = 'change-password.html';
+    window.location.href = 'change-password.html' + (window.ASMS_SESSION === 'parent' ? '?session=parent' : '');
   }
   return true;
 }
@@ -147,6 +155,54 @@ const api = {
   put:    (url, body)   => apiFetch(url, { method: 'PUT',    body: JSON.stringify(body) }),
   delete: (url)         => apiFetch(url, { method: 'DELETE' }),
 };
+
+// ── Download a protected file ────────────────────────────────
+// Plain <a href> links send no token, so files are fetched with
+// authFetch and saved from a blob. The filename comes from the
+// server's Content-Disposition (RFC 5987 filename* first, so
+// Amharic names survive), falling back to `fallbackName`.
+function filenameFromDisposition(header) {
+  if (!header) return null;
+  const star = header.match(/filename\*\s*=\s*UTF-8''([^;]+)/i);
+  if (star) { try { return decodeURIComponent(star[1].trim()); } catch { /* malformed */ } }
+  const plain = header.match(/filename\s*=\s*"?([^";]+)"?/i);
+  return plain ? plain[1].trim() : null;
+}
+
+async function downloadFile(endpoint, fallbackName = 'download') {
+  try {
+    const res = await authFetch(endpoint);
+    if (!res) return;   // session ended
+    if (!res.ok) {
+      const body = await res.json().catch(() => null);
+      showToast(body?.message || 'Download failed.', 'error');
+      return;
+    }
+    const name = filenameFromDisposition(res.headers.get('Content-Disposition')) || fallbackName;
+    const url  = URL.createObjectURL(await res.blob());
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = name;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  } catch {
+    showToast('Download failed.', 'error');
+  }
+}
+
+// ── Finance is admin-only (enforced by the API) ──────────────
+// For anyone else, finance links and elements marked data-finance
+// are removed so teachers don't see panels that would only fail.
+function canSeeFinance() {
+  return getUser()?.role === 'admin';
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  if (!getUser() || canSeeFinance()) return;
+  document.querySelectorAll('a[href="finance.html"], [data-finance]').forEach(el => el.remove());
+});
 
 // ── Format currency (ETB) ─────────────────────────────────────
 function formatETB(amount) {

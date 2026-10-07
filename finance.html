@@ -211,6 +211,8 @@
 <script src="assets/js/escape.js"></script>
 <script src="assets/js/api.js"></script>
 <script>
+  // Finance is admin-only; other roles go back to the dashboard
+  if (getUser() && !canSeeFinance()) window.location.replace('dashboard.html');
   requireAuth();
   const user = getUser();
   if (user) {

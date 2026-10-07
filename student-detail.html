@@ -119,7 +119,7 @@
     const [profileRes, gradesRes, feesRes, attRes] = await Promise.all([
       api.get(`/students/${studentId}`),
       api.get(`/grades/report-card/${studentId}`),
-      api.get(`/finance/student/${studentId}`),
+      canSeeFinance() ? api.get(`/finance/student/${studentId}`) : null,   // finance is admin-only
       api.get(`/attendance/student/${studentId}`),
     ]);
 
@@ -205,26 +205,26 @@
           <div class="panel" style="margin-bottom:16px">
             <div class="panel-header"><div class="panel-title">📅 Attendance</div></div>
             <div class="panel-body">
-              ${att?.overall ? `
+              ${att?.stats && parseInt(att.stats.total_days) > 0 ? `
                 <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">
                   <div style="background:var(--bg3);border-radius:8px;padding:10px;text-align:center">
-                    <div style="font-size:20px;font-weight:800;color:var(--green)">${escapeHtml(att.overall.rate||0)}%</div>
+                    <div style="font-size:20px;font-weight:800;color:var(--green)">${escapeHtml(att.stats.attendance_rate||0)}%</div>
                     <div style="font-size:10px;color:var(--text3)">Rate</div>
                   </div>
                   <div style="background:var(--bg3);border-radius:8px;padding:10px;text-align:center">
-                    <div style="font-size:20px;font-weight:800">${escapeHtml(att.overall.present||0)}</div>
+                    <div style="font-size:20px;font-weight:800">${escapeHtml(att.stats.present||0)}</div>
                     <div style="font-size:10px;color:var(--text3)">Present</div>
                   </div>
                   <div style="background:var(--bg3);border-radius:8px;padding:10px;text-align:center">
-                    <div style="font-size:20px;font-weight:800;color:var(--red)">${escapeHtml(att.overall.absent||0)}</div>
+                    <div style="font-size:20px;font-weight:800;color:var(--red)">${escapeHtml(att.stats.absent||0)}</div>
                     <div style="font-size:10px;color:var(--text3)">Absent</div>
                   </div>
                 </div>` : '<p style="color:var(--text3);font-size:12px">No attendance yet</p>'}
             </div>
           </div>
 
-          <!-- Fees -->
-          <div class="panel">
+          <!-- Fees (admins only) -->
+          <div class="panel" ${canSeeFinance() ? '' : 'style="display:none"'}>
             <div class="panel-header"><div class="panel-title">💰 Fee Balance</div></div>
             <div class="panel-body">
               ${fee?.overview ? `

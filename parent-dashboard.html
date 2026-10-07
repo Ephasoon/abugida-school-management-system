@@ -187,7 +187,7 @@
     <div class="logo-sub">አቡጊዳ ትምህርት ቤት — የወላጅ ፖርታል</div>
   </div>
   <span style="font-size:12px;color:var(--text2);margin-left:12px" id="parentName"></span>
-  <button class="btn-logout" onclick="doLogout()">Sign Out ↪</button>
+  <button class="btn-logout" onclick="logout()">Sign Out ↪</button>
 </div>
 
 <!-- CHILD SELECTOR -->
@@ -236,7 +236,7 @@
   <div class="tab-page" id="tab-grades">
     <div style="display:flex;align-items:center;justify-content:space-between;margin:20px 0 16px">
       <div style="font-size:16px;font-weight:700">Academic Performance</div>
-      <a id="rcLink" href="#" class="btn-dl" target="_blank">📄 Report Card PDF</a>
+      <a id="rcLink" href="#" class="btn-dl">📄 Report Card PDF</a>
     </div>
     <div id="gradesArea"><div class="loading"><div class="spinner"></div></div></div>
   </div>
@@ -263,29 +263,16 @@
 
 <script src="assets/js/config.js"></script>
 <script src="assets/js/escape.js"></script>
+<script>window.ASMS_SESSION = 'parent';   // api.js: parent_token, parent-login.html</script>
+<script src="assets/js/api.js"></script>
 <script>
-  const API   = window.ASMS_CONFIG.API_BASE;
-  const token = localStorage.getItem('parent_token');
-  const pUser = JSON.parse(localStorage.getItem('parent_user')||'null');
-  if (!token) window.location.href = 'parent-login.html';
+  // Requests go through the shared api.js: token refresh on 401, logout on failure
+  requireAuth();
+  const pUser = getUser();
 
   let children    = [];
   let activeChild = null;
   let activeTab   = 'overview';
-
-  async function apiFetch(url) {
-    const res = await fetch(`${API}${url}`,{
-      headers:{'Authorization':`Bearer ${token}`},credentials:'include'
-    });
-    if (res.status===401){doLogout();return null;}
-    return res.json();
-  }
-
-  function doLogout(){
-    localStorage.removeItem('parent_token');
-    localStorage.removeItem('parent_user');
-    window.location.href='parent-login.html';
-  }
 
   function formatETB(n){return `ETB ${parseFloat(n||0).toLocaleString('en-ET',{minimumFractionDigits:2,maximumFractionDigits:2})}`;}
   function fmtDate(d){if(!d)return'—';return new Date(d).toLocaleDateString('en-ET',{year:'numeric',month:'short',day:'numeric'});}
@@ -339,7 +326,10 @@
   function selectChild(id,btn){
     activeChild=id;
     if(btn){document.querySelectorAll('.child-tab').forEach(b=>b.classList.remove('active'));btn.classList.add('active');}
-    document.getElementById('rcLink').href=`${API}/pdf/report-card/${id}`;
+    document.getElementById('rcLink').onclick = (e) => {
+      e.preventDefault();
+      downloadFile(`/pdf/report-card/${encodeURIComponent(id)}`, 'report-card.pdf');
+    };
     loadTab(activeTab);
   }
 

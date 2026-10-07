@@ -125,8 +125,8 @@
         </div>
       </div>
 
-      <!-- Finance Summary -->
-      <div class="panel">
+      <!-- Finance Summary (admins only; removed for other roles by api.js) -->
+      <div class="panel" data-finance>
         <div class="panel-header">
           <div class="panel-title">💰 Finance Overview</div>
           <a href="finance.html" class="btn btn-ghost btn-sm">Details →</a>
@@ -183,7 +183,7 @@
   async function loadDashboard() {
     await Promise.all([
       loadStudentStats(),
-      loadFinanceSummary(),
+      canSeeFinance() ? loadFinanceSummary() : null,
     ]);
   }
 
