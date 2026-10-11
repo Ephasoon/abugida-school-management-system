@@ -97,13 +97,14 @@
             <thead>
               <tr>
                 <th>Teacher</th>
+                <th>Email</th>
                 <th>Class</th>
                 <th>Subject</th>
                 <th>Action</th>
               </tr>
             </thead>
             <tbody id="assignmentsBody">
-              <tr><td colspan="4">
+              <tr><td colspan="5">
                 <div class="loading-state"><div class="spinner"></div> Loading assignments...</div>
               </td></tr>
             </tbody>
@@ -147,7 +148,7 @@
       return [];
     }
     fillSelect('a_teacher', teachers.data,
-      t => `${t.first_name} ${t.last_name} (${t.teacher_number})`, 'Select a teacher');
+      t => `${t.first_name} ${t.last_name} (${t.teacher_number}) — ${t.email || 'no account'}`, 'Select a teacher');
     fillSelect('a_class', classes.data,
       c => `${c.name} — Grade ${c.grade_level}${c.section}`, 'Select a class');
     fillSelect('a_subject', subjects.data,
@@ -167,6 +168,7 @@
       (res.data.classes || []).forEach(c => rows.push({
         teacherId:   t.id,
         teacherName: `${t.first_name} ${t.last_name} (${t.teacher_number})`,
+        teacherEmail: t.email || '—',
         classId:     c.id,
         className:   c.name,
         subjectId:   c.subject_id,
@@ -180,6 +182,7 @@
       ? rows.map(r => `
         <tr>
           <td class="primary">${escapeHtml(r.teacherName)}</td>
+          <td>${escapeHtml(r.teacherEmail)}</td>
           <td>${escapeHtml(r.className)}</td>
           <td>${escapeHtml(r.subjectName)}</td>
           <td>
@@ -187,7 +190,7 @@
               onclick="removeAssignment(${escapeHtml(JSON.stringify(r))})">Remove</button>
           </td>
         </tr>`).join('')
-      : `<tr><td colspan="4"><div class="empty-state"><div class="empty-icon">🏫</div>
+      : `<tr><td colspan="5"><div class="empty-state"><div class="empty-icon">🏫</div>
           <p>No assignments yet. Teachers cannot create exams or enter grades until they are assigned.</p>
         </div></td></tr>`;
   }
@@ -223,7 +226,7 @@
 
   // ── Remove ───────────────────────────────────────────────
   async function removeAssignment(r) {
-    if (!confirm(`Remove ${r.teacherName} from ${r.className} — ${r.subjectName}?`)) return;
+    if (!confirm(`Remove ${r.teacherName} <${r.teacherEmail}> from ${r.className} — ${r.subjectName}?`)) return;
     const path = [r.teacherId, 'classes', r.classId, r.subjectId].map(encodeURIComponent).join('/');
     const res = await api.delete(`/teachers/${path}`);
     if (res?.success) {
